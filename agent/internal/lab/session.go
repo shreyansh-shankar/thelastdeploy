@@ -1,0 +1,80 @@
+// agent/internal/lab/session.go
+package lab
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+)
+
+// Session represents an active lab session written to ~/.orbstack/session.json
+type Session struct {
+	ChallengeID   string    `json:"challenge_id"`
+	StartedAt     time.Time `json:"started_at"`
+	ValidatorPath string    `json:"validator_path"`
+	SetupType     string    `json:"setup_type"`
+	// ContainerID is set for docker-type challenges; empty for shell-type.
+	ContainerID   string    `json:"container_id,omitempty"`
+}
+
+func sessionPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".orbstack", "session.json"), nil
+}
+
+func WriteSession(s *Session) error {
+	path, err := sessionPath()
+	if err != nil {
+		return err
+	}
+	// Ensure directory exists
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+func ReadSession() (*Session, error) {
+	path, err := sessionPath()
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("no active lab session — run: orbstack start <challenge-id>")
+		}
+		return nil, err
+	}
+	var s Session
+	if err := json.Unmarshal(data, &s); err != nil {
+		return nil, fmt.Errorf("corrupt session file: %w", err)
+	}
+	return &s, nil
+}
+
+func ClearSession() error {
+	path, err := sessionPath()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func SessionExists() bool {
+	path, _ := sessionPath()
+	_, err := os.Stat(path)
+	return err == nil
+}
