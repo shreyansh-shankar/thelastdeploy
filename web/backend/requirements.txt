@@ -1,0 +1,13 @@
+# web/backend/requirements.txt
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.13.3
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pydantic[email]==2.9.2
+pydantic-settings==2.5.2
+python-multipart==0.0.12
+pyyaml==6.0.2
+bcrypt==4.0.1
