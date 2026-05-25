@@ -3,25 +3,28 @@
 import { Badge } from "@/components/ui/badge";
 import { Difficulty } from "@/lib/types";
 
-const config: Record<Difficulty, { label: string; className: string }> = {
+const config: Record<Difficulty, { label: string; style: React.CSSProperties; className: string }> = {
   beginner: {
     label: "Beginner",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+    style: { backgroundColor: "rgba(var(--accent-primary-rgb), 0.15)", color: "var(--accent-primary)", borderColor: "rgba(var(--accent-primary-rgb), 0.3)" },
+    className: "",
   },
   intermediate: {
     label: "Intermediate",
-    className: "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+    style: { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24", borderColor: "rgba(251,191,36,0.3)" },
+    className: "",
   },
   advanced: {
     label: "Advanced",
-    className: "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20",
+    style: { backgroundColor: "rgba(255,68,68,0.15)", color: "#ff4444", borderColor: "rgba(255,68,68,0.3)" },
+    className: "",
   },
 };
 
 export function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
-  const { label, className } = config[difficulty] ?? config.beginner;
+  const { label, style } = config[difficulty] ?? config.beginner;
   return (
-    <Badge variant="outline" className={className}>
+    <Badge variant="outline" style={style} className="font-semibold text-xs px-2.5 py-0.5">
       {label}
     </Badge>
   );

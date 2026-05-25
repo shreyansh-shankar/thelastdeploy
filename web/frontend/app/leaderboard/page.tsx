@@ -3,15 +3,15 @@
 "use client";
 
 import { useLeaderboard } from "@/hooks/use-leaderboard";
-import { PageHeader } from "@/components/shared/page-header";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy } from "lucide-react";
 
-const rankStyles: Record<number, string> = {
-  1: "text-yellow-400",
-  2: "text-slate-300",
-  3: "text-amber-600",
+const rankStyle = (rank: number) => {
+  if (rank === 1) return { color: "#FFD700" };
+  if (rank === 2) return { color: "#C0C0C0" };
+  if (rank === 3) return { color: "#CD7F32" };
+  return { color: "#555" };
 };
 
 export default function LeaderboardPage() {
@@ -19,57 +19,61 @@ export default function LeaderboardPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Leaderboard"
-        description="Top learners ranked by XP earned across all challenges."
-      />
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <div className="border-b border-[#1a1a1a]">
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <h1 className="text-4xl font-black tracking-tight">Leaderboard</h1>
+          <p className="mt-2 text-[#888]">Top learners ranked by XP.</p>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-10">
         {loading && <LoadingSpinner className="py-20" />}
-        {error && <div className="text-center py-20 text-destructive">{error}</div>}
+        {error && <div className="text-center py-20 text-red-400 text-sm">{error}</div>}
         {!loading && !error && (
-          <div className="rounded-xl border border-border/50 overflow-hidden">
+          <div className="rounded-2xl border border-[#2a2a2a] overflow-hidden bg-[#0d0d0d]">
             {leaderboard.length === 0 ? (
-              <div className="text-center py-20 text-muted-foreground">
-                No entries yet. Be the first!
+              <div className="text-center py-20 text-[#555] text-sm">
+                No entries yet. Complete a challenge to appear here!
               </div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="bg-white/[0.03] border-b border-border/40">
+                <thead className="border-b border-[#1a1a1a] bg-[#111]">
                   <tr>
-                    <th className="text-left px-5 py-3 text-muted-foreground font-medium">Rank</th>
-                    <th className="text-left px-5 py-3 text-muted-foreground font-medium">User</th>
-                    <th className="text-right px-5 py-3 text-muted-foreground font-medium">Challenges</th>
-                    <th className="text-right px-5 py-3 text-muted-foreground font-medium">XP</th>
+                    <th className="text-left px-6 py-4 text-[#555] font-semibold uppercase text-xs tracking-widest">Rank</th>
+                    <th className="text-left px-6 py-4 text-[#555] font-semibold uppercase text-xs tracking-widest">User</th>
+                    <th className="text-right px-6 py-4 text-[#555] font-semibold uppercase text-xs tracking-widest">Challenges</th>
+                    <th className="text-right px-6 py-4 text-[#555] font-semibold uppercase text-xs tracking-widest">XP</th>
                   </tr>
                 </thead>
                 <tbody>
                   {leaderboard.map((entry) => (
                     <tr
                       key={entry.rank}
-                      className="border-b border-border/20 last:border-0 hover:bg-white/[0.02] transition-colors"
+                      className="border-b border-[#111] last:border-0 hover:bg-white/[0.02] transition-colors"
                     >
-                      <td className="px-5 py-4">
-                        <span className={`font-bold ${rankStyles[entry.rank] ?? "text-muted-foreground"}`}>
-                          {entry.rank <= 3 ? (
-                            <Trophy className="inline h-4 w-4 mr-1" />
-                          ) : null}
-                          #{entry.rank}
+                      <td className="px-6 py-4">
+                        <span className="font-black font-mono flex items-center gap-1.5" style={rankStyle(entry.rank)}>
+                          {entry.rank <= 3 && <Trophy className="h-3.5 w-3.5" />}
+                          {entry.rank}
                         </span>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            <AvatarFallback
+                              className="text-xs font-bold"
+                              style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.15)", color: "var(--accent-primary)" }}
+                            >
                               {entry.username.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{entry.username}</span>
+                          <span className="font-semibold">{entry.username}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-right text-muted-foreground">
+                      <td className="px-6 py-4 text-right text-[#666] font-mono">
                         {entry.completed}
                       </td>
-                      <td className="px-5 py-4 text-right font-mono font-semibold text-primary">
+                      <td className="px-6 py-4 text-right font-mono font-black" style={{ color: "var(--accent-primary)" }}>
                         {entry.xp} XP
                       </td>
                     </tr>

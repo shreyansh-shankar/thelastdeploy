@@ -7,10 +7,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Terminal } from "lucide-react";
 
 export default function RegisterPage() {
   const { login } = useAuth();
@@ -37,19 +35,24 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-flex p-3 rounded-xl bg-primary/10 mb-4">
-            <Terminal className="h-6 w-6 text-primary" />
+        <div className="mb-8">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+            style={{ backgroundColor: "var(--accent-primary)" }}
+          >
+            <span className="text-black font-black text-xl">O</span>
           </div>
-          <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="text-muted-foreground text-sm mt-1">Free forever. No credit card needed.</p>
+          <h1 className="text-3xl font-black">Create account</h1>
+          <p className="text-[#666] text-sm mt-1">Free forever. No credit card needed.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username" className="text-[#aaa] text-xs font-semibold uppercase tracking-wider">
+              Username
+            </Label>
             <Input
               id="username"
               type="text"
@@ -57,10 +60,13 @@ export default function RegisterPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              className="bg-[#111] border-[#2a2a2a] text-white placeholder:text-[#444] h-12 rounded-xl focus:border-[var(--accent-primary)] focus:ring-0"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-[#aaa] text-xs font-semibold uppercase tracking-wider">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -68,10 +74,13 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="bg-[#111] border-[#2a2a2a] text-white placeholder:text-[#444] h-12 rounded-xl focus:border-[var(--accent-primary)] focus:ring-0"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-[#aaa] text-xs font-semibold uppercase tracking-wider">
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
@@ -79,23 +88,29 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="bg-[#111] border-[#2a2a2a] text-white placeholder:text-[#444] h-12 rounded-xl focus:border-[var(--accent-primary)] focus:ring-0"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+            <div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 px-4 py-3 rounded-xl">
               {error}
-            </p>
+            </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-12 rounded-xl font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            style={{ backgroundColor: "var(--accent-primary)" }}
+          >
             {loading ? "Creating account..." : "Create account"}
-          </Button>
+          </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="text-center text-sm text-[#555] mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
+          <Link href="/login" className="font-semibold hover:text-white transition-colors" style={{ color: "var(--accent-primary)" }}>
             Log in
           </Link>
         </p>

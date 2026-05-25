@@ -5,16 +5,58 @@
 import { useState } from "react";
 import { ChallengeCard } from "./challenge-card";
 import { Challenge, Difficulty, Topic } from "@/lib/types";
-import { Button } from "@/components/ui/button";
 
 const TOPICS = ["all", "docker", "kubernetes", "linux", "cicd"] as const;
 const DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"] as const;
 
-interface ChallengeGridProps {
-  challenges: Challenge[];
+const topicLabels: Record<string, string> = {
+  all: "All Topics",
+  docker: "Docker",
+  kubernetes: "Kubernetes",
+  linux: "Linux",
+  cicd: "CI/CD",
+};
+
+const diffLabels: Record<string, string> = {
+  all: "All Levels",
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
+function FilterButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150 border"
+      style={
+        active
+          ? {
+              backgroundColor: "var(--accent-primary)",
+              color: "#000",
+              borderColor: "var(--accent-primary)",
+            }
+          : {
+              backgroundColor: "#111",
+              color: "#888",
+              borderColor: "#2a2a2a",
+            }
+      }
+    >
+      {children}
+    </button>
+  );
 }
 
-export function ChallengeGrid({ challenges }: ChallengeGridProps) {
+export function ChallengeGrid({ challenges }: { challenges: Challenge[] }) {
   const [topic, setTopic] = useState<"all" | Topic>("all");
   const [difficulty, setDifficulty] = useState<"all" | Difficulty>("all");
 
@@ -27,40 +69,31 @@ export function ChallengeGrid({ challenges }: ChallengeGridProps) {
   return (
     <div>
       {/* Filters */}
-      <div className="flex flex-wrap gap-6 mb-8">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Topic</span>
+      <div className="flex flex-col gap-4 mb-10">
+        <div className="flex flex-wrap gap-2">
           {TOPICS.map((t) => (
-            <Button
-              key={t}
-              variant={topic === t ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs capitalize"
-              onClick={() => setTopic(t)}
-            >
-              {t}
-            </Button>
+            <FilterButton key={t} active={topic === t} onClick={() => setTopic(t)}>
+              {topicLabels[t]}
+            </FilterButton>
           ))}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Level</span>
+        <div className="flex flex-wrap gap-2">
           {DIFFICULTIES.map((d) => (
-            <Button
-              key={d}
-              variant={difficulty === d ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs capitalize"
-              onClick={() => setDifficulty(d)}
-            >
-              {d}
-            </Button>
+            <FilterButton key={d} active={difficulty === d} onClick={() => setDifficulty(d)}>
+              {diffLabels[d]}
+            </FilterButton>
           ))}
         </div>
       </div>
 
+      {/* Count */}
+      <p className="text-sm text-[#555] mb-6 font-mono">
+        {filtered.length} challenge{filtered.length !== 1 ? "s" : ""} found
+      </p>
+
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
+        <div className="text-center py-20 text-[#555] text-sm">
           No challenges match your filters.
         </div>
       ) : (

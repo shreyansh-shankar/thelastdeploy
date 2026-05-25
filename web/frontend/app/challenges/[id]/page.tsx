@@ -5,18 +5,17 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { DifficultyBadge } from "@/components/challenges/difficulty-badge";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Challenge } from "@/lib/types";
-import { CheckCircle2, Clock, Terminal, Zap } from "lucide-react";
+import { CheckCircle2, Clock, ArrowLeft, Zap } from "lucide-react";
+import Link from "next/link";
 
-const topicColors: Record<string, string> = {
-  docker: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  kubernetes: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  linux: "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  cicd: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+const topicConfig: Record<string, { bg: string; border: string; label: string; color: string }> = {
+  docker:     { bg: "var(--topic-docker)",     border: "var(--topic-docker-border)",     label: "Docker",     color: "var(--topic-docker-text)" },
+  kubernetes: { bg: "var(--topic-kubernetes)", border: "var(--topic-kubernetes-border)", label: "Kubernetes", color: "var(--topic-kubernetes-text)" },
+  linux:      { bg: "var(--topic-linux)",      border: "var(--topic-linux-border)",      label: "Linux",      color: "var(--topic-linux-text)" },
+  cicd:       { bg: "var(--topic-cicd)",       border: "var(--topic-cicd-border)",       label: "CI/CD",      color: "var(--topic-cicd-text)" },
 };
 
 export default function ChallengeDetailPage() {
@@ -27,75 +26,110 @@ export default function ChallengeDetailPage() {
 
   useEffect(() => {
     api.getChallenge(id)
-      .then(setChallenge)
+      .then((data) => setChallenge(data as unknown as Challenge))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return <LoadingSpinner className="py-40" />;
   if (error || !challenge) return (
-    <div className="text-center py-40 text-destructive">
+    <div className="text-center py-40 text-red-400 text-sm">
       {error ?? "Challenge not found"}
     </div>
   );
 
+  const topic = topicConfig[challenge.topic] ?? topicConfig.docker;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      {/* Badges */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        <Badge variant="outline" className={topicColors[challenge.topic] ?? ""}>
-          {challenge.topic}
-        </Badge>
-        <DifficultyBadge difficulty={challenge.difficulty} />
-        {challenge.completed && (
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-            <CheckCircle2 className="h-3 w-3 mr-1" /> Completed
-          </Badge>
-        )}
-      </div>
+      {/* Back */}
+      <Link
+        href="/challenges"
+        className="inline-flex items-center gap-1.5 text-sm text-[#666] hover:text-white transition-colors mb-8"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to challenges
+      </Link>
 
-      {/* Title */}
-      <h1 className="text-3xl font-bold tracking-tight mb-3">{challenge.title}</h1>
-      <p className="text-muted-foreground text-base leading-relaxed mb-6">
-        {challenge.description}
-      </p>
+      {/* Header card */}
+      <div
+        className="rounded-2xl p-8 border mb-6"
+        style={{ backgroundColor: topic.bg, borderColor: topic.border }}
+      >
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span
+            className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg"
+            style={{ color: topic.color, backgroundColor: "rgba(0,0,0,0.3)" }}
+          >
+            {topic.label}
+          </span>
+          <DifficultyBadge difficulty={challenge.difficulty} />
+          {challenge.completed && (
+            <span
+              className="text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"
+              style={{
+                color: "var(--accent-primary)",
+                backgroundColor: "rgba(var(--accent-primary-rgb), 0.1)",
+              }}
+            >
+              <CheckCircle2 className="h-3 w-3" />
+              Completed
+            </span>
+          )}
+        </div>
 
-      {/* Meta */}
-      <div className="flex items-center gap-6 text-sm text-muted-foreground mb-10 pb-8 border-b border-border/40">
-        <span className="flex items-center gap-1.5">
-          <Zap className="h-4 w-4 text-primary" />
-          {challenge.xp} XP
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Clock className="h-4 w-4" />
-          ~{challenge.estimated_minutes} minutes
-        </span>
-      </div>
+        <h1 className="text-3xl font-black text-white mb-3">{challenge.title}</h1>
+        <p className="text-[#aaa] leading-relaxed">{challenge.description}</p>
 
-      {/* How to start */}
-      <div className="rounded-xl border border-border/50 bg-card/30 p-6 mb-6">
-        <h2 className="font-semibold text-base mb-4 flex items-center gap-2">
-          <Terminal className="h-4 w-4 text-primary" />
-          How to start this challenge
-        </h2>
-        <div className="space-y-2 font-mono text-sm bg-black/40 rounded-lg p-4 border border-border/30">
-          <p><span className="text-primary">$</span> orbstack sync</p>
-          <p><span className="text-primary">$</span> orbstack start {challenge.id}</p>
-          <p className="text-muted-foreground"># Follow the steps printed in your terminal</p>
-          <p><span className="text-primary">$</span> orbstack check</p>
+        <div className="flex items-center gap-6 mt-6 pt-6 border-t border-white/10 text-sm">
+          <span className="flex items-center gap-1.5 font-mono font-bold" style={{ color: "var(--accent-primary)" }}>
+            <Zap className="h-4 w-4" />
+            {challenge.xp} XP
+          </span>
+          <span className="flex items-center gap-1.5 text-[#888]">
+            <Clock className="h-4 w-4" />
+            ~{challenge.estimated_minutes} minutes
+          </span>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <Button asChild>
-          <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-            Install OrbStack Agent
-          </a>
-        </Button>
-        <Button variant="outline" onClick={() => window.history.back()}>
-          ← Back to challenges
-        </Button>
+      {/* How to start */}
+      <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] overflow-hidden mb-6">
+        <div className="px-6 py-4 border-b border-[#1a1a1a] bg-[#111]">
+          <h2 className="font-bold text-sm uppercase tracking-widest text-[#888]">
+            How to start
+          </h2>
+        </div>
+        <div className="px-6 py-5 font-mono text-sm space-y-2">
+          <p>
+            <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
+            <span className="text-white">orbstack sync</span>
+          </p>
+          <p>
+            <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
+            <span className="text-white">orbstack start {challenge.id}</span>
+          </p>
+          <p className="text-[#555]"># Follow the steps in your terminal</p>
+          <p>
+            <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
+            <span className="text-white">orbstack check</span>
+          </p>
+        </div>
       </div>
+
+      <a
+        href="https://github.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-black transition-all hover:scale-105"
+        style={{
+          backgroundColor: "var(--accent-primary)",
+          boxShadow: "0 0 20px rgba(var(--accent-primary-rgb), 0.25)",
+        }}
+      >
+        Install OrbStack Agent
+        <ArrowLeft className="h-4 w-4 rotate-180" />
+      </a>
     </div>
   );
 }
