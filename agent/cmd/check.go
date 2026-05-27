@@ -45,12 +45,11 @@ func runCheck(args []string) error {
 		return nil
 	}
 
-	// Attempt to POST result to the API.
+	// Attempt to POST result to the API, with auth token if available.
 	orbstackDir := filepath.Dir(cfg.DeviceKeyPath) // ~/.orbstack
-	if err := postResult(cfg.APIBaseURL, result); err != nil {
+	if err := postResult(cfg.APIBaseURL, cfg.AuthToken, result); err != nil {
 		// Backend unreachable — save to queue for next sync.
 		fmt.Printf("\n(Could not reach API: %v)\n", err)
-
 		entry := &queue.Entry{
 			ChallengeID: result.ChallengeID,
 			Passed:      result.Passed,
@@ -68,14 +67,26 @@ func runCheck(args []string) error {
 	return nil
 }
 
-func postResult(apiBaseURL string, r *validator.Result) error {
+// postResult POSTs a validator result to the API.
+// If authToken is non-empty, it is sent as a Bearer token so the backend can
+// tie the result to a user account and award XP.
+func postResult(apiBaseURL, authToken string, r *validator.Result) error {
 	data, err := json.MarshalIndent(r, "", "  ")
 	if err != nil {
 		return err
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Post(apiBaseURL+"/results", "application/json", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, apiBaseURL+"/results", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -89,7 +100,11 @@ func postResult(apiBaseURL string, r *validator.Result) error {
 	var respBody map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&respBody); err == nil {
 		if xp, ok := respBody["xp_awarded"]; ok {
-			fmt.Printf("\n🎉 +%.0f XP awarded!\n", xp.(float64))
+			if xp.(float64) > 0 {
+				fmt.Printf("\n🎉 +%.0f XP awarded!\n", xp.(float64))
+			} else {
+				fmt.Println("\n✅ Already completed — no new XP awarded.")
+			}
 		}
 	}
 	return nil

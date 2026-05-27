@@ -38,6 +38,16 @@ func Execute() {
 			fmt.Fprintln(os.Stderr, "status:", err)
 			os.Exit(1)
 		}
+	case "login":
+		if err := runLogin(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "login:", err)
+			os.Exit(1)
+		}
+	case "logout":
+		if err := runLogout(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "logout:", err)
+			os.Exit(1)
+		}
 	case "help", "--help", "-h":
 		printUsage()
 	default:
@@ -59,5 +69,7 @@ Commands:
   stop              Stop the running lab environment
   check             Run the validator and report pass/fail
   status            Show running lab, elapsed time, resource usage
+  login             Authenticate with the OrbStack API
+  logout            Remove saved credentials
   help              Show this help message`)
 }

@@ -10,17 +10,16 @@ import (
 
 // Config holds all agent settings read from ~/.orbstack/config.yaml
 type Config struct {
-	APIBaseURL     string `yaml:"api_base_url"`
-	DeviceKeyPath  string `yaml:"device_key_path"`
-	ChallengesDir  string `yaml:"challenges_dir"`
+	APIBaseURL    string `yaml:"api_base_url"`
+	DeviceKeyPath string `yaml:"device_key_path"`
+	ChallengesDir string `yaml:"challenges_dir"`
+	AuthToken     string `yaml:"auth_token"` // set by `orbstack login`, empty if not logged in
 }
 
 const defaultAPIBaseURL = "http://localhost:8742"
 
 // Load reads ~/.orbstack/config.yaml. If the file does not exist, it creates
-// it with sensible defaults and returns those defaults. This means the agent
-// always has a valid config — callers never need to handle "no config" as
-// a special case.
+// it with sensible defaults and returns those defaults.
 func Load() (*Config, error) {
 	path, err := configPath()
 	if err != nil {
@@ -37,7 +36,6 @@ func Load() (*Config, error) {
 	if err == nil {
 		return parse(string(data)), nil
 	}
-
 	if !os.IsNotExist(err) {
 		return nil, fmt.Errorf("read config: %w", err)
 	}
@@ -48,6 +46,17 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("write default config: %w", err)
 	}
 	return cfg, nil
+}
+
+// Save persists the current config struct back to ~/.orbstack/config.yaml.
+// This is used by `orbstack login` and `orbstack logout` to update AuthToken
+// without clobbering the other fields.
+func Save(cfg *Config) error {
+	path, err := configPath()
+	if err != nil {
+		return err
+	}
+	return write(path, cfg)
 }
 
 // OrbStackDir returns the absolute path to ~/.orbstack/
@@ -81,7 +90,6 @@ func defaults() *Config {
 }
 
 // parse is a minimal hand-rolled YAML reader for our simple flat config.
-// We avoid pulling in a YAML library to keep the binary dependency-free.
 func parse(raw string) *Config {
 	cfg := defaults()
 	for _, line := range strings.Split(raw, "\n") {
@@ -110,19 +118,29 @@ func parse(raw string) *Config {
 			if val != "" {
 				cfg.ChallengesDir = expandHome(val)
 			}
+		case "auth_token":
+			// Store as-is; empty string means not logged in.
+			cfg.AuthToken = val
 		}
 	}
 	return cfg
 }
 
 func write(path string, cfg *Config) error {
+	// Build the auth_token line only when a token is present, so the file
+	// stays clean when the user is not logged in.
+	authLine := ""
+	if cfg.AuthToken != "" {
+		authLine = fmt.Sprintf("auth_token: %s\n", cfg.AuthToken)
+	}
+
 	content := fmt.Sprintf(`# OrbStack agent configuration
 # Generated automatically on first run. Safe to edit.
-
 api_base_url: %s
 device_key_path: %s
 challenges_dir: %s
-`, cfg.APIBaseURL, cfg.DeviceKeyPath, cfg.ChallengesDir)
+%s`, cfg.APIBaseURL, cfg.DeviceKeyPath, cfg.ChallengesDir, authLine)
+
 	return os.WriteFile(path, []byte(content), 0600)
 }
 

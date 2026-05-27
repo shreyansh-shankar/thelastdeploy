@@ -35,8 +35,7 @@ func runSync(args []string) error {
 	orbstackDir := filepath.Dir(cfg.DeviceKeyPath) // ~/.orbstack
 
 	// Step 1: drain the result queue if the API is reachable.
-	// We do this before fetching challenges so a single sync handles both.
-	apiReachable := drainQueue(cfg.APIBaseURL, orbstackDir)
+	apiReachable := drainQueue(cfg.APIBaseURL, cfg.AuthToken, orbstackDir)
 
 	// Step 2: fetch challenges from the API (or fall back to local).
 	fmt.Printf("Syncing challenges from %s...\n", cfg.APIBaseURL)
@@ -95,22 +94,23 @@ func runSync(args []string) error {
 }
 
 // drainQueue attempts to POST any queued results to the API.
-// Returns true if the API is reachable (even if some POSTs fail), false if not.
-func drainQueue(apiBaseURL, orbstackDir string) bool {
+// authToken is forwarded on every POST so queued results are still credited
+// to the user's account even when they were saved while offline.
+// Returns true if the API is reachable, false if not.
+func drainQueue(apiBaseURL, authToken, orbstackDir string) bool {
 	entries, err := queue.LoadAll(orbstackDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warn: could not read queue: %v\n", err)
 		return false
 	}
 	if len(entries) == 0 {
-		// Nothing queued — just probe reachability with a HEAD request.
+		// Nothing queued — just probe reachability with a GET /health.
 		client := &http.Client{Timeout: 3 * time.Second}
 		resp, err := client.Get(apiBaseURL + "/health")
 		if err != nil {
 			return false
 		}
 		resp.Body.Close()
-		// If we got HTML back, it's not our API.
 		return resp.StatusCode < 500
 	}
 
@@ -118,20 +118,18 @@ func drainQueue(apiBaseURL, orbstackDir string) bool {
 
 	reachable := false
 	for _, entry := range entries {
-		if err := postQueuedEntry(apiBaseURL, entry); err != nil {
+		if err := postQueuedEntry(apiBaseURL, authToken, entry); err != nil {
 			fmt.Fprintf(os.Stderr, "  ✗ %s (queued %s ago): %v\n",
 				entry.ChallengeID,
 				time.Since(entry.QueuedAt).Round(time.Second),
 				err,
 			)
-			// If first attempt already fails, stop trying — API is down.
 			if !reachable {
 				return false
 			}
 			continue
 		}
 		reachable = true
-		// Delete from queue only after confirmed POST success.
 		if err := queue.Delete(orbstackDir, entry.ChallengeID, entry.QueuedAt); err != nil {
 			fmt.Fprintf(os.Stderr, "  warn: could not remove queue entry: %v\n", err)
 		} else {
@@ -144,17 +142,31 @@ func drainQueue(apiBaseURL, orbstackDir string) bool {
 	return reachable
 }
 
-func postQueuedEntry(apiBaseURL string, entry *queue.Entry) error {
+// postQueuedEntry POSTs a single queued entry to the API.
+// The auth token is included when present so the backend can attribute XP even
+// for results that were saved while the user was offline.
+func postQueuedEntry(apiBaseURL, authToken string, entry *queue.Entry) error {
 	data, err := json.MarshalIndent(entry, "", "  ")
 	if err != nil {
 		return err
 	}
+
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Post(apiBaseURL+"/results", "application/json", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, apiBaseURL+"/results", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("API returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
