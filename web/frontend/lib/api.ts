@@ -1,5 +1,7 @@
 // web/frontend/lib/api.ts
 
+import { Module, ModuleDetail, User, LeaderboardEntry } from "./types";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8742";
 
 function getToken(): string | null {
@@ -37,35 +39,22 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
-  // Challenges
-  getChallenges: () =>
-    request<{ challenges: { id: string; yaml: string }[] }>("/challenges"),
+  // Modules
+  getModules: () =>
+    request<{ modules: Module[] }>("/modules"),
 
-  getChallenge: (id: string) =>
-    request<{
-      id: string;
-      title: string;
-      description: string;
-      topic: string;
-      difficulty: string;
-      xp: number;
-      estimated_minutes: number;
-      completed: boolean;
-    }>(`/challenges/${id}`),
+  getModule: (id: string) =>
+    request<ModuleDetail>(`/modules/${id}`),
+
+  completeSection: (moduleId: string, sectionId: string) =>
+    request<{ xp_awarded: number; total_xp: number }>(
+      `/modules/${moduleId}/sections/${sectionId}/complete`,
+      { method: "POST" }
+    ),
 
   // Users
-  getMe: () =>
-    request<{
-      id: number;
-      username: string;
-      email: string;
-      xp: number;
-      streak_days: number;
-      completed_challenges: string[];
-    }>("/me"),
+  getMe: () => request<User>("/me"),
 
   getLeaderboard: () =>
-    request<{
-      leaderboard: { rank: number; username: string; xp: number; completed: number }[];
-    }>("/leaderboard"),
+    request<{ leaderboard: LeaderboardEntry[] }>("/leaderboard"),
 };

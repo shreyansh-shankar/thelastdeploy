@@ -1,23 +1,36 @@
 // web/frontend/lib/types.ts
 
-export interface ChallengeRaw {
-  id: string;
-  yaml: string;
-}
-
-export interface Challenge {
-  id: string;
-  title: string;
-  description: string;
-  topic: Topic;
-  difficulty: Difficulty;
-  xp: number;
-  estimated_minutes: number;
-  completed: boolean;
-}
-
 export type Topic = "docker" | "kubernetes" | "linux" | "cicd";
 export type Difficulty = "beginner" | "intermediate" | "advanced";
+export type SectionType = "reading" | "practical";
+
+export interface Section {
+  id: string;
+  title: string;
+  type: SectionType;
+  order: number;
+  xp: number;
+  content: string | null;
+  completed: boolean;
+  xp_awarded: number;
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  description: string | null;
+  topic: Topic;
+  difficulty: Difficulty;
+  estimated_minutes: number | null;
+  tags: string[];
+  total_xp: number;
+  total_sections: number;
+  completed_sections: number;
+}
+
+export interface ModuleDetail extends Module {
+  sections: Section[];
+}
 
 export interface User {
   id: number;
@@ -25,7 +38,7 @@ export interface User {
   email: string;
   xp: number;
   streak_days: number;
-  completed_challenges: string[];
+  completed_sections: string[];
 }
 
 export interface LeaderboardEntry {

@@ -20,30 +20,63 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-# --- Challenges ---
+# --- Sections ---
 
-class ChallengeListItem(BaseModel):
+class SectionSchema(BaseModel):
     id: str
-    yaml: str
+    title: str
+    type: str
+    order: int
+    xp: int
+    content: str | None = None
+    completed: bool = False
+    xp_awarded: int = 0
 
-class ChallengeListResponse(BaseModel):
-    challenges: list[ChallengeListItem]
+    class Config:
+        from_attributes = True
 
-class ChallengeDetail(BaseModel):
+
+# --- Modules ---
+
+class ModuleListItem(BaseModel):
     id: str
     title: str
     description: str | None
     topic: str | None
     difficulty: str | None
-    xp: int
     estimated_minutes: int | None
-    completed: bool = False
+    tags: list[str] = []
+    total_xp: int = 0
+    total_sections: int = 0
+    completed_sections: int = 0
+
+class ModuleListResponse(BaseModel):
+    modules: list[ModuleListItem]
+
+class ModuleDetail(BaseModel):
+    id: str
+    title: str
+    description: str | None
+    topic: str | None
+    difficulty: str | None
+    estimated_minutes: int | None
+    tags: list[str] = []
+    total_xp: int
+    sections: list[SectionSchema]
 
 
-# --- Results ---
+# --- Section Progress ---
+
+class CompleteSectionResponse(BaseModel):
+    xp_awarded: int
+    total_xp: int
+
+
+# --- Results (practical sections) ---
 
 class ResultRequest(BaseModel):
-    challenge_id: str
+    module_id: str
+    section_id: str
     passed: bool
     output: str | None = None
     ran_at: datetime | None = None
@@ -62,9 +95,9 @@ class MeResponse(BaseModel):
     email: str
     xp: int
     streak_days: int
-    completed_challenges: list[str]
+    completed_sections: list[str]
 
-class LeaderboardEntry(BaseModel):  
+class LeaderboardEntry(BaseModel):
     rank: int
     username: str
     xp: int

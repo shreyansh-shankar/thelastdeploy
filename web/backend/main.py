@@ -2,12 +2,12 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, challenges, results, users
+from app.routers import auth, modules, results, users
 
 app = FastAPI(
     title="OrbStack API",
     description="Backend for the OrbStack DevOps practice platform",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -22,7 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, tags=["auth"])
-app.include_router(challenges.router, tags=["challenges"])
+app.include_router(modules.router, tags=["modules"])
 app.include_router(results.router, tags=["results"])
 app.include_router(users.router, tags=["users"])
 

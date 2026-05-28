@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.dependencies import get_db, get_current_user
-from app.models import User, Result
+from app.models import User, SectionProgress
 from app.schemas import MeResponse, LeaderboardEntry, LeaderboardResponse
 
 router = APIRouter()
@@ -16,9 +16,9 @@ async def get_me(
     current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(Result.challenge_id).where(
-            Result.user_id == current_user.id,
-            Result.passed == True,
+        select(SectionProgress.section_id).where(
+            SectionProgress.user_id == current_user.id,
+            SectionProgress.completed == True,
         )
     )
     completed = [row[0] for row in result.fetchall()]
@@ -29,28 +29,30 @@ async def get_me(
         email=current_user.email,
         xp=current_user.xp,
         streak_days=current_user.streak_days,
-        completed_challenges=completed,
+        completed_sections=completed,
     )
 
 
 @router.get("/leaderboard", response_model=LeaderboardResponse)
 async def get_leaderboard(db: AsyncSession = Depends(get_db)):
-    # Get users ordered by XP with completed challenge count
     result = await db.execute(
         select(
             User.id,
             User.username,
             User.xp,
-            func.count(Result.id).label("completed"),
+            func.count(SectionProgress.id).label("completed"),
         )
-        .outerjoin(Result, (Result.user_id == User.id) & (Result.passed == True))
+        .outerjoin(
+            SectionProgress,
+            (SectionProgress.user_id == User.id) & (SectionProgress.completed == True)
+        )
         .group_by(User.id, User.username, User.xp)
         .order_by(User.xp.desc())
         .limit(50)
     )
     rows = result.fetchall()
 
-    leaderboard = [
+    return LeaderboardResponse(leaderboard=[
         LeaderboardEntry(
             rank=i + 1,
             username=row.username,
@@ -58,6 +60,4 @@ async def get_leaderboard(db: AsyncSession = Depends(get_db)):
             completed=row.completed,
         )
         for i, row in enumerate(rows)
-    ]
-
-    return LeaderboardResponse(leaderboard=leaderboard)
+    ])

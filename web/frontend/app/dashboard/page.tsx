@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const rank = getRank(user.xp);
   const nextRank = getNextRank(user.xp);
   const xpProgress = getXpProgress(user.xp);
-  const completionPct = Math.round((user.completed_challenges.length / TOTAL_CHALLENGES) * 100);
+  const completionPct = Math.round((user.completed_sections.length / TOTAL_CHALLENGES) * 100);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -118,7 +118,7 @@ export default function DashboardPage() {
             <span className="text-xs text-[#555] font-semibold uppercase tracking-wider">Completed</span>
           </div>
           <p className="text-3xl font-black font-mono" style={{ color: "var(--topic-kubernetes-text)" }}>
-            {user.completed_challenges.length}
+            {user.completed_sections.length}
             <span className="text-sm font-normal text-[#666] ml-1">/ {TOTAL_CHALLENGES}</span>
           </p>
         </div>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
             <h2 className="font-black text-lg mb-6">Progress Overview</h2>
             <div className="flex flex-wrap items-center justify-around gap-8">
               <ActivityRing
-                value={user.completed_challenges.length}
+                value={user.completed_sections.length}
                 max={TOTAL_CHALLENGES}
                 color="var(--accent-primary)"
                 label="Challenges"
@@ -176,7 +176,7 @@ export default function DashboardPage() {
                 Browse all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
-            {user.completed_challenges.length === 0 ? (
+            {user.completed_sections.length === 0 ? (
               <div className="text-center py-10">
                 <Terminal className="h-8 w-8 text-[#2a2a2a] mx-auto mb-3" />
                 <p className="text-[#555] text-sm">No challenges completed yet.</p>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {user.completed_challenges.map((id) => (
+                {user.completed_sections.map((id) => (
                   <ChallengeBadge key={id} id={id} />
                 ))}
               </div>
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             <h2 className="font-black text-lg mb-4">Quick Actions</h2>
             <div className="flex flex-col gap-2">
               {[
-                { label: "Browse Challenges", href: "/challenges" },
+                { label: "Browse Modules", href: "/modules" },
                 { label: "View Leaderboard", href: "/leaderboard" },
                 { label: "My Profile", href: "/profile" },
               ].map(({ label, href }) => (
