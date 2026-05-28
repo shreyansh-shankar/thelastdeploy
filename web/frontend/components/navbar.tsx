@@ -44,9 +44,9 @@ export function Navbar() {
   return (
     <nav className="border-b border-[#1a1a1a] bg-[#0a0a0a] sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent-primary)] flex items-center justify-center">
+        {/* Logo — dashboard if logged in, landing if not */}
+        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--accent-primary)" }}>
             <span className="text-black font-black text-sm">O</span>
           </div>
           <span className="font-black text-lg tracking-tight">OrbStack</span>
@@ -76,8 +76,11 @@ export function Navbar() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 bg-[#111] border-[#2a2a2a]">
-                <DropdownMenuItem onClick={() => router.push("/dashboard")} className="cursor-pointer">
-                  Dashboard
+                <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
+                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-[#2a2a2a]" />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-400">
@@ -87,20 +90,10 @@ export function Navbar() {
             </DropdownMenu>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-                className="text-[#888] hover:text-white hover:bg-white/5"
-              >
+              <Button variant="ghost" size="sm" asChild className="text-[#888] hover:text-white hover:bg-white/5">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button
-                size="sm"
-                asChild
-                className="font-bold text-black rounded-xl"
-                style={{ backgroundColor: "var(--accent-primary)" }}
-              >
+              <Button size="sm" asChild className="font-bold text-black rounded-xl" style={{ backgroundColor: "var(--accent-primary)" }}>
                 <Link href="/register">Sign up</Link>
               </Button>
             </>

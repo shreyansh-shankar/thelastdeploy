@@ -1,44 +1,47 @@
 // web/frontend/app/page.tsx
 
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowRight, Container, GitBranch, Monitor, Server } from "lucide-react";
 
 const features = [
   {
-    icon: Container,
-    title: "Docker",
+    icon: Container, title: "Docker",
     description: "From hello-world to multi-stage builds.",
-    bg: "var(--topic-docker)",
-    border: "var(--topic-docker-border)",
-    color: "var(--topic-docker-text)",
+    bg: "var(--topic-docker)", border: "var(--topic-docker-border)", color: "var(--topic-docker-text)",
   },
   {
-    icon: Server,
-    title: "Kubernetes",
+    icon: Server, title: "Kubernetes",
     description: "Deploy and scale on real clusters.",
-    bg: "var(--topic-kubernetes)",
-    border: "var(--topic-kubernetes-border)",
-    color: "var(--topic-kubernetes-text)",
+    bg: "var(--topic-kubernetes)", border: "var(--topic-kubernetes-border)", color: "var(--topic-kubernetes-text)",
   },
   {
-    icon: Monitor,
-    title: "Linux",
+    icon: Monitor, title: "Linux",
     description: "Permissions, processes, networking.",
-    bg: "var(--topic-linux)",
-    border: "var(--topic-linux-border)",
-    color: "var(--topic-linux-text)",
+    bg: "var(--topic-linux)", border: "var(--topic-linux-border)", color: "var(--topic-linux-text)",
   },
   {
-    icon: GitBranch,
-    title: "CI/CD",
+    icon: GitBranch, title: "CI/CD",
     description: "Pipelines, deploys, automation.",
-    bg: "var(--topic-cicd)",
-    border: "var(--topic-cicd-border)",
-    color: "var(--topic-cicd-text)",
+    bg: "var(--topic-cicd)", border: "var(--topic-cicd-border)", color: "var(--topic-cicd-text)",
   },
 ];
 
 export default function HomePage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) router.replace("/dashboard");
+  }, [user, loading, router]);
+
+  if (loading) return null;
+  if (user) return null;
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
@@ -99,34 +102,20 @@ export default function HomePage() {
             <span className="ml-3 text-xs text-[#555] font-mono">orbstack — zsh</span>
           </div>
           <div className="px-5 py-5 space-y-2 font-mono text-sm">
-            <p>
-              <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
-              <span className="text-white">orbstack sync</span>
-            </p>
+            <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack sync</span></p>
             <p className="text-[#555]">  ✓ docker-hello</p>
             <p className="text-[#555]">  ✓ k8s-first-pod</p>
-            <p className="mt-3">
-              <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
-              <span className="text-white">orbstack start docker-hello</span>
-            </p>
+            <p className="mt-3"><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack start docker-hello</span></p>
             <p className="text-[#555]">  Lab ready. Follow the steps above.</p>
-            <p className="mt-3">
-              <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
-              <span className="text-white">orbstack check</span>
-            </p>
-            <p style={{ color: "var(--accent-primary)" }} className="font-semibold">
-              {"  "}✅ PASSED — 🎉 +50 XP awarded!
-            </p>
+            <p className="mt-3"><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack check</span></p>
+            <p style={{ color: "var(--accent-primary)" }} className="font-semibold">  ✅ PASSED — 🎉 +50 XP awarded!</p>
           </div>
         </div>
       </section>
 
       {/* Feature cards */}
       <section className="max-w-6xl mx-auto px-4 pb-24">
-        <h2 className="text-3xl font-black mb-8">
-          Four tracks.{" "}
-          <span className="text-[#555]">One platform.</span>
-        </h2>
+        <h2 className="text-3xl font-black mb-8">Four tracks. <span className="text-[#555]">One platform.</span></h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {features.map(({ icon: Icon, title, description, bg, border, color }) => (
             <div
@@ -134,10 +123,7 @@ export default function HomePage() {
               className="rounded-2xl p-6 border flex flex-col gap-4 hover:scale-[1.02] transition-all duration-200"
               style={{ backgroundColor: bg, borderColor: border }}
             >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
-              >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.3)" }}>
                 <Icon className="h-5 w-5" style={{ color }} />
               </div>
               <div>
@@ -149,28 +135,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA strip */}
-      <section
-        className="border-t border-b border-[#1a1a1a] py-16"
-        style={{ backgroundColor: "rgba(var(--accent-primary-rgb), 0.04)" }}
-      >
+      {/* CTA */}
+      <section className="border-t border-b border-[#1a1a1a] py-16" style={{ backgroundColor: "rgba(var(--accent-primary-rgb), 0.04)" }}>
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
             <h2 className="text-3xl font-black">Ready to start?</h2>
-            <p className="text-[#888] mt-1">
-              Install the agent and pick your first challenge.
-            </p>
+            <p className="text-[#888] mt-1">Install the agent and pick your first challenge.</p>
           </div>
           <Link
             href="/challenges"
             className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-black shrink-0 hover:scale-105 transition-all"
-            style={{
-              backgroundColor: "var(--accent-primary)",
-              boxShadow: "0 0 24px rgba(var(--accent-primary-rgb), 0.25)",
-            }}
+            style={{ backgroundColor: "var(--accent-primary)", boxShadow: "0 0 24px rgba(var(--accent-primary-rgb), 0.25)" }}
           >
-            View all challenges
-            <ArrowRight className="h-4 w-4" />
+            View all challenges <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
