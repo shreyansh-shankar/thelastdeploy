@@ -18,33 +18,36 @@ import (
 
 func runStart(args []string) error {
 	if len(args) < 1 {
-		return errors.New("usage: orbstack start <challenge-id>")
+		return errors.New("usage: orbstack start <module-id>")
 	}
-	id := args[0]
+	moduleID := args[0]
 
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	// Resolve the challenge YAML from the cache directory.
-	yamlPath := filepath.Join(cfg.ChallengesDir, id, "challenge.yaml")
-	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
-		return fmt.Errorf("challenge '%s' not found — run 'orbstack sync' first", id)
+	// Check that the module directory exists in the cache (either module.json
+	// from API sync or module.yaml from local sync will be inside it).
+	moduleDir := filepath.Join(cfg.ChallengesDir, moduleID)
+	if _, err := os.Stat(moduleDir); os.IsNotExist(err) {
+		return fmt.Errorf("module '%s' not found — run 'orbstack sync' first", moduleID)
 	}
 
-	c, err := cache.ParseYAML(yamlPath)
+	// LoadModule handles both module.json (API sync) and module.yaml (local sync).
+	m, err := cache.LoadModule(cfg.ChallengesDir, moduleID)
 	if err != nil {
-		return fmt.Errorf("parse challenge: %w", err)
+		return fmt.Errorf("load module: %w", err)
 	}
 
-	// Start the lab environment (writes session, prints steps).
-	if err := lab.Start(c, cfg.ChallengesDir); err != nil {
+	if m.PracticalSectionID == "" {
+		return fmt.Errorf("module '%s' has no practical section — nothing to start", moduleID)
+	}
+
+	if err := lab.Start(m, cfg.ChallengesDir); err != nil {
 		return err
 	}
 
-	// Start the local HTTP server on 127.0.0.1:7842.
-	// If it's already running (e.g. left over from a previous start), skip.
 	if localserver.IsRunning() {
 		fmt.Println("  (local server already running on :7842)")
 		return nil
@@ -53,8 +56,6 @@ func runStart(args []string) error {
 	srv := localserver.New(cfg.DeviceKeyPath)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Catch Ctrl+C / SIGTERM — stop the lab cleanly instead of leaving
-	// containers or kind clusters running in the background.
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -64,7 +65,6 @@ func runStart(args []string) error {
 		lab.Stop()
 	}()
 
-	// Blocking: server runs until cancelled.
 	if err := srv.Start(ctx); err != nil {
 		return fmt.Errorf("local server: %w", err)
 	}

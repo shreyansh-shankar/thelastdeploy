@@ -17,13 +17,22 @@ import (
 	"github.com/orbstack/agent/internal/queue"
 )
 
-type syncResponse struct {
-	Challenges []challengeBundle `json:"challenges"`
+// modulesResponse matches GET /modules
+type modulesResponse struct {
+	Modules []moduleJSON `json:"modules"`
 }
 
-type challengeBundle struct {
-	ID   string `json:"id"`
-	YAML string `json:"yaml"`
+// moduleJSON matches the structured object the backend returns per module.
+type moduleJSON struct {
+	ID               string   `json:"id"`
+	Title            string   `json:"title"`
+	Description      string   `json:"description"`
+	Topic            string   `json:"topic"`
+	Difficulty       string   `json:"difficulty"`
+	EstimatedMinutes int      `json:"estimated_minutes"`
+	Tags             []string `json:"tags"`
+	TotalXP          int      `json:"total_xp"`
+	TotalSections    int      `json:"total_sections"`
 }
 
 func runSync(args []string) error {
@@ -32,23 +41,21 @@ func runSync(args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	orbstackDir := filepath.Dir(cfg.DeviceKeyPath) // ~/.orbstack
+	orbstackDir := filepath.Dir(cfg.DeviceKeyPath)
 
-	// Step 1: drain the result queue if the API is reachable.
 	apiReachable := drainQueue(cfg.APIBaseURL, cfg.AuthToken, orbstackDir)
 
-	// Step 2: fetch challenges from the API (or fall back to local).
-	fmt.Printf("Syncing challenges from %s...\n", cfg.APIBaseURL)
+	fmt.Printf("Syncing modules from %s...\n", cfg.APIBaseURL)
 
 	if !apiReachable {
-		fmt.Println("API unreachable — falling back to local challenge files...")
+		fmt.Println("API unreachable — falling back to local module files...")
 		return syncFromLocal(cfg.ChallengesDir)
 	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(cfg.APIBaseURL + "/challenges")
+	resp, err := client.Get(cfg.APIBaseURL + "/modules")
 	if err != nil {
-		fmt.Println("API unreachable — falling back to local challenge files...")
+		fmt.Println("API unreachable — falling back to local module files...")
 		return syncFromLocal(cfg.ChallengesDir)
 	}
 	defer resp.Body.Close()
@@ -58,11 +65,10 @@ func runSync(args []string) error {
 		return fmt.Errorf("read response: %w", err)
 	}
 
-	// If response starts with '<' something else owns this port.
 	if len(body) > 0 && body[0] == '<' {
 		fmt.Printf("Port %s is taken by another service (got HTML, not our API).\n", cfg.APIBaseURL)
 		fmt.Printf("Tip: edit ~/.orbstack/config.yaml to change api_base_url.\n\n")
-		fmt.Println("Falling back to local challenge files...")
+		fmt.Println("Falling back to local module files...")
 		return syncFromLocal(cfg.ChallengesDir)
 	}
 
@@ -70,33 +76,38 @@ func runSync(args []string) error {
 		return fmt.Errorf("API returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	var sr syncResponse
-	if err := json.Unmarshal(body, &sr); err != nil {
-		fmt.Println("API response not recognised — falling back to local challenge files...")
+	var mr modulesResponse
+	if err := json.Unmarshal(body, &mr); err != nil {
+		fmt.Println("API response not recognised — falling back to local module files...")
 		return syncFromLocal(cfg.ChallengesDir)
 	}
 
-	if len(sr.Challenges) == 0 {
-		fmt.Println("No challenges returned from API.")
+	if len(mr.Modules) == 0 {
+		fmt.Println("No modules returned from API.")
 		return nil
 	}
 
-	for _, bundle := range sr.Challenges {
-		if err := cache.SaveRaw(cfg.ChallengesDir, bundle.ID, []byte(bundle.YAML)); err != nil {
-			fmt.Fprintf(os.Stderr, "warn: failed to save %s: %v\n", bundle.ID, err)
+	for _, m := range mr.Modules {
+		// Save the structured JSON so ParseModuleJSON can read it back.
+		data, err := json.MarshalIndent(m, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "warn: failed to marshal %s: %v\n", m.ID, err)
 			continue
 		}
-		fmt.Printf("  ✓ %s\n", bundle.ID)
+		if err := cache.SaveModuleJSON(cfg.ChallengesDir, m.ID, data); err != nil {
+			fmt.Fprintf(os.Stderr, "warn: failed to save %s: %v\n", m.ID, err)
+			continue
+		}
+		// Also sync sections from local ./challenges/ if they exist.
+		syncSections(m.ID, cfg.ChallengesDir)
+		fmt.Printf("  ✓ %s\n", m.ID)
 	}
 
-	fmt.Printf("\nSynced %d challenge(s) to %s\n", len(sr.Challenges), cfg.ChallengesDir)
+	fmt.Printf("\nSynced %d module(s) to %s\n", len(mr.Modules), cfg.ChallengesDir)
 	return nil
 }
 
 // drainQueue attempts to POST any queued results to the API.
-// authToken is forwarded on every POST so queued results are still credited
-// to the user's account even when they were saved while offline.
-// Returns true if the API is reachable, false if not.
 func drainQueue(apiBaseURL, authToken, orbstackDir string) bool {
 	entries, err := queue.LoadAll(orbstackDir)
 	if err != nil {
@@ -104,7 +115,6 @@ func drainQueue(apiBaseURL, authToken, orbstackDir string) bool {
 		return false
 	}
 	if len(entries) == 0 {
-		// Nothing queued — just probe reachability with a GET /health.
 		client := &http.Client{Timeout: 3 * time.Second}
 		resp, err := client.Get(apiBaseURL + "/health")
 		if err != nil {
@@ -119,8 +129,9 @@ func drainQueue(apiBaseURL, authToken, orbstackDir string) bool {
 	reachable := false
 	for _, entry := range entries {
 		if err := postQueuedEntry(apiBaseURL, authToken, entry); err != nil {
-			fmt.Fprintf(os.Stderr, "  ✗ %s (queued %s ago): %v\n",
-				entry.ChallengeID,
+			fmt.Fprintf(os.Stderr, "  ✗ %s/%s (queued %s ago): %v\n",
+				entry.ModuleID,
+				entry.SectionID,
 				time.Since(entry.QueuedAt).Round(time.Second),
 				err,
 			)
@@ -130,11 +141,12 @@ func drainQueue(apiBaseURL, authToken, orbstackDir string) bool {
 			continue
 		}
 		reachable = true
-		if err := queue.Delete(orbstackDir, entry.ChallengeID, entry.QueuedAt); err != nil {
+		if err := queue.Delete(orbstackDir, entry.ModuleID, entry.SectionID, entry.QueuedAt); err != nil {
 			fmt.Fprintf(os.Stderr, "  warn: could not remove queue entry: %v\n", err)
 		} else {
-			fmt.Printf("  ✓ %s (queued %s ago) — synced\n",
-				entry.ChallengeID,
+			fmt.Printf("  ✓ %s/%s (queued %s ago) — synced\n",
+				entry.ModuleID,
+				entry.SectionID,
 				time.Since(entry.QueuedAt).Round(time.Second),
 			)
 		}
@@ -142,9 +154,6 @@ func drainQueue(apiBaseURL, authToken, orbstackDir string) bool {
 	return reachable
 }
 
-// postQueuedEntry POSTs a single queued entry to the API.
-// The auth token is included when present so the backend can attribute XP even
-// for results that were saved while the user was offline.
 func postQueuedEntry(apiBaseURL, authToken string, entry *queue.Entry) error {
 	data, err := json.MarshalIndent(entry, "", "  ")
 	if err != nil {
@@ -174,7 +183,7 @@ func postQueuedEntry(apiBaseURL, authToken string, entry *queue.Entry) error {
 	return nil
 }
 
-// syncFromLocal copies challenges from ./challenges/ into the cache.
+// syncFromLocal reads modules from ./challenges/ and copies them into the cache.
 func syncFromLocal(challengesDir string) error {
 	entries, err := os.ReadDir("challenges")
 	if err != nil {
@@ -186,41 +195,59 @@ func syncFromLocal(challengesDir string) error {
 		if !e.IsDir() {
 			continue
 		}
-		yamlPath := "challenges/" + e.Name() + "/challenge.yaml"
+		moduleID := e.Name()
+		yamlPath := filepath.Join("challenges", moduleID, "module.yaml")
 		data, err := os.ReadFile(yamlPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "warn: skipping %s: %v\n", e.Name(), err)
+			fmt.Fprintf(os.Stderr, "warn: skipping %s (no module.yaml): %v\n", moduleID, err)
 			continue
 		}
 
-		tmpFile := os.TempDir() + "/orbstack_validate_" + e.Name() + ".yaml"
-		if err := os.WriteFile(tmpFile, data, 0644); err == nil {
-			if _, parseErr := cache.ParseYAML(tmpFile); parseErr != nil {
-				fmt.Fprintf(os.Stderr, "warn: skipping %s (parse error): %v\n", e.Name(), parseErr)
-				os.Remove(tmpFile)
-				continue
-			}
-			os.Remove(tmpFile)
-		}
-
-		if err := cache.SaveRaw(challengesDir, e.Name(), data); err != nil {
-			fmt.Fprintf(os.Stderr, "warn: failed to save %s: %v\n", e.Name(), err)
+		if err := cache.SaveRaw(challengesDir, moduleID, data); err != nil {
+			fmt.Fprintf(os.Stderr, "warn: failed to save %s: %v\n", moduleID, err)
 			continue
 		}
 
-		validatorSrc := "challenges/" + e.Name() + "/validator.sh"
-		if vData, err := os.ReadFile(validatorSrc); err == nil {
-			vDest := challengesDir + "/" + e.Name() + "/validator.sh"
-			os.WriteFile(vDest, vData, 0755)
-		}
-
-		fmt.Printf("  ✓ %s\n", e.Name())
+		syncSections(moduleID, challengesDir)
+		fmt.Printf("  ✓ %s\n", moduleID)
 		count++
 	}
 
 	if count == 0 {
-		return fmt.Errorf("no valid challenges found in ./challenges/")
+		return fmt.Errorf("no valid modules found in ./challenges/")
 	}
-	fmt.Printf("\nSynced %d local challenge(s) to %s\n", count, challengesDir)
+	fmt.Printf("\nSynced %d local module(s) to %s\n", count, challengesDir)
 	return nil
+}
+
+// syncSections copies section.yaml and validator.sh from ./challenges/ into cache.
+func syncSections(moduleID, challengesDir string) {
+	srcSectionsDir := filepath.Join("challenges", moduleID, "sections")
+	dstSectionsDir := filepath.Join(challengesDir, moduleID, "sections")
+
+	entries, err := os.ReadDir(srcSectionsDir)
+	if err != nil {
+		return
+	}
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		dirName := e.Name()
+		srcDir := filepath.Join(srcSectionsDir, dirName)
+		dstDir := filepath.Join(dstSectionsDir, dirName)
+
+		if err := os.MkdirAll(dstDir, 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "warn: could not create section dir %s: %v\n", dstDir, err)
+			continue
+		}
+
+		if data, err := os.ReadFile(filepath.Join(srcDir, "section.yaml")); err == nil {
+			os.WriteFile(filepath.Join(dstDir, "section.yaml"), data, 0644)
+		}
+		if data, err := os.ReadFile(filepath.Join(srcDir, "validator.sh")); err == nil {
+			os.WriteFile(filepath.Join(dstDir, "validator.sh"), data, 0755)
+		}
+	}
 }

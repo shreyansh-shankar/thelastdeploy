@@ -2,31 +2,68 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { ModuleDetail } from "@/lib/types";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ActivityRing } from "@/components/dashboard/activity-ring";
-import { ChallengeBadge } from "@/components/dashboard/challenge-badge";
-import { getRank, getNextRank, getXpProgress, TOTAL_CHALLENGES } from "@/lib/ranks";
-import { Zap, Flame, Trophy, Terminal, ArrowRight, CheckCircle2 } from "lucide-react";
+import { SectionBadge } from "@/components/dashboard/section-badge";
+import { getRank, getNextRank, getXpProgress, TOTAL_SECTIONS } from "@/lib/ranks";
+import { Zap, Flame, Trophy, Terminal, ArrowRight, CheckCircle2, BookOpen, Wrench } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [modules, setModules] = useState<ModuleDetail[]>([]);
+  const [modulesLoading, setModulesLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
+
+  // fetch full module details to map section ids → module ids
+  const fetchModules = useCallback(async () => {
+    try {
+      const { modules: list } = await api.getModules();
+      const details = await Promise.all(list.map((m) => api.getModule(m.id)));
+      setModules(details);
+    } catch {
+      // silently fail — badges just link to /modules
+    } finally {
+      setModulesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) fetchModules();
+  }, [user, fetchModules]);
 
   if (loading || !user) return <LoadingSpinner className="py-40" />;
 
   const rank = getRank(user.xp);
   const nextRank = getNextRank(user.xp);
   const xpProgress = getXpProgress(user.xp);
-  const completionPct = Math.round((user.completed_sections.length / TOTAL_CHALLENGES) * 100);
+  const completionPct = Math.round((user.completed_sections.length / TOTAL_SECTIONS) * 100);
+
+  // build a map of sectionId → moduleId for badge links
+  const sectionToModule: Record<string, string> = {};
+  modules.forEach((m) => {
+    m.sections.forEach((s) => {
+      sectionToModule[s.id] = m.id;
+    });
+  });
+
+  // group completed sections by module
+  const completedByModule: Record<string, string[]> = {};
+  user.completed_sections.forEach((sectionId) => {
+    const moduleId = sectionToModule[sectionId] ?? "unknown";
+    if (!completedByModule[moduleId]) completedByModule[moduleId] = [];
+    completedByModule[moduleId].push(sectionId);
+  });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -118,8 +155,10 @@ export default function DashboardPage() {
             <span className="text-xs text-[#555] font-semibold uppercase tracking-wider">Completed</span>
           </div>
           <p className="text-3xl font-black font-mono" style={{ color: "var(--topic-kubernetes-text)" }}>
-            {user.completed_sections.length}
-            <span className="text-sm font-normal text-[#666] ml-1">/ {TOTAL_CHALLENGES}</span>
+            {modulesLoading ? "—" : modules.filter(
+              (m) => m.sections.every((s) => user.completed_sections.includes(s.id)) && m.sections.length > 0
+            ).length}
+            <span className="text-sm font-normal text-[#666] ml-1">modules</span>
           </p>
         </div>
 
@@ -141,11 +180,13 @@ export default function DashboardPage() {
             <h2 className="font-black text-lg mb-6">Progress Overview</h2>
             <div className="flex flex-wrap items-center justify-around gap-8">
               <ActivityRing
-                value={user.completed_sections.length}
-                max={TOTAL_CHALLENGES}
+                value={modulesLoading ? 0 : modules.filter(
+                  (m) => m.sections.every((s) => user.completed_sections.includes(s.id)) && m.sections.length > 0
+                ).length}
+                max={modules.length || 1}
                 color="var(--accent-primary)"
-                label="Challenges"
-                sublabel={`${completionPct}% complete`}
+                label="Modules"
+                sublabel={modulesLoading ? "loading..." : `${modules.length} total`}
               />
               <ActivityRing
                 value={xpProgress.current}
@@ -164,32 +205,108 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Completed challenges */}
+          {/* Completed modules */}
           <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-black text-lg">Completed Challenges</h2>
+              <h2 className="font-black text-lg">Completed Modules</h2>
               <Link
-                href="/challenges"
+                href="/modules"
                 className="text-xs font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity"
                 style={{ color: "var(--accent-primary)" }}
               >
                 Browse all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
-            {user.completed_sections.length === 0 ? (
-              <div className="text-center py-10">
-                <Terminal className="h-8 w-8 text-[#2a2a2a] mx-auto mb-3" />
-                <p className="text-[#555] text-sm">No challenges completed yet.</p>
-                <Link href="/challenges" className="text-sm font-semibold mt-2 inline-block hover:opacity-80" style={{ color: "var(--accent-primary)" }}>
-                  Start your first challenge →
-                </Link>
-              </div>
+
+            {modulesLoading ? (
+              <LoadingSpinner className="py-6" />
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {user.completed_sections.map((id) => (
-                  <ChallengeBadge key={id} id={id} />
-                ))}
-              </div>
+              (() => {
+                const completedModules = modules.filter(
+                  (m) => m.sections.every((s) => user.completed_sections.includes(s.id))
+                    && m.sections.length > 0
+                );
+                const inProgressModules = modules.filter(
+                  (m) => m.sections.some((s) => user.completed_sections.includes(s.id))
+                    && !m.sections.every((s) => user.completed_sections.includes(s.id))
+                );
+
+                if (completedModules.length === 0 && inProgressModules.length === 0) {
+                  return (
+                    <div className="text-center py-10">
+                      <Terminal className="h-8 w-8 text-[#2a2a2a] mx-auto mb-3" />
+                      <p className="text-[#555] text-sm">No modules started yet.</p>
+                      <Link
+                        href="/modules"
+                        className="text-sm font-semibold mt-2 inline-block hover:opacity-80"
+                        style={{ color: "var(--accent-primary)" }}
+                      >
+                        Start your first module →
+                      </Link>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="flex flex-col gap-3">
+                    {/* Completed */}
+                    {completedModules.map((m) => (
+                      <Link key={m.id} href={`/modules/${m.id}`}>
+                        <div
+                          className="flex items-center justify-between px-4 py-3 rounded-xl border transition-all hover:scale-[1.01]"
+                          style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.05)", borderColor: "rgba(var(--accent-primary-rgb),0.2)" }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "var(--accent-primary)" }} />
+                            <div>
+                              <p className="font-bold text-sm text-white">{m.title}</p>
+                              <p className="text-xs text-[#555] mt-0.5">{m.sections.length} sections · {m.total_xp} XP earned</p>
+                            </div>
+                          </div>
+                          <span
+                            className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
+                            style={{ color: "var(--accent-primary)", backgroundColor: "rgba(var(--accent-primary-rgb),0.1)" }}
+                          >
+                            Complete
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+
+                    {/* In progress */}
+                    {inProgressModules.map((m) => {
+                      const done = m.sections.filter((s) => user.completed_sections.includes(s.id)).length;
+                      const pct = Math.round((done / m.sections.length) * 100);
+                      return (
+                        <Link key={m.id} href={`/modules/${m.id}`}>
+                          <div
+                            className="flex items-center justify-between px-4 py-3 rounded-xl border border-[#2a2a2a] bg-[#111] transition-all hover:scale-[1.01] hover:border-[#3a3a3a]"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-5 h-5 rounded-full border-2 border-[#3a3a3a] shrink-0 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-[#3a3a3a]" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-sm text-white truncate">{m.title}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <div className="w-20 h-1 rounded-full bg-[#1a1a1a] overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full"
+                                      style={{ width: `${pct}%`, backgroundColor: "var(--accent-primary)" }}
+                                    />
+                                  </div>
+                                  <span className="text-xs text-[#555] font-mono">{done}/{m.sections.length}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <span className="text-xs text-[#555] shrink-0 ml-3">{pct}%</span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>
@@ -221,7 +338,7 @@ export default function DashboardPage() {
             <div className="space-y-2 font-mono text-xs">
               {[
                 ["orbstack login", "Authenticate"],
-                ["orbstack sync", "Fetch challenges"],
+                ["orbstack sync", "Fetch modules"],
                 ["orbstack start <id>", "Start a lab"],
                 ["orbstack check", "Validate & earn XP"],
                 ["orbstack status", "Show active lab"],

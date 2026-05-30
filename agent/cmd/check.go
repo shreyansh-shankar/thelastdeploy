@@ -28,9 +28,9 @@ func runCheck(args []string) error {
 		return err
 	}
 
-	fmt.Printf("Running validator for: %s\n\n", session.ChallengeID)
+	fmt.Printf("Running validator for: %s / %s\n\n", session.ModuleID, session.SectionID)
 
-	result, err := validator.Run(session.ChallengeID, session.ValidatorPath, cfg.DeviceKeyPath)
+	result, err := validator.Run(session.ModuleID, session.SectionID, session.ValidatorPath, cfg.DeviceKeyPath)
 	if err != nil {
 		return fmt.Errorf("validator error: %w", err)
 	}
@@ -45,17 +45,16 @@ func runCheck(args []string) error {
 		return nil
 	}
 
-	// Attempt to POST result to the API, with auth token if available.
-	orbstackDir := filepath.Dir(cfg.DeviceKeyPath) // ~/.orbstack
-	if err := postResult(cfg.APIBaseURL, cfg.AuthToken, result); err != nil {
-		// Backend unreachable — save to queue for next sync.
+	orbstackDir := filepath.Dir(cfg.DeviceKeyPath)
+	if err := postResult(cfg.APIBaseURL, cfg.AuthToken, session.ModuleID, session.SectionID, result); err != nil {
 		fmt.Printf("\n(Could not reach API: %v)\n", err)
 		entry := &queue.Entry{
-			ChallengeID: result.ChallengeID,
-			Passed:      result.Passed,
-			Output:      result.Output,
-			RanAt:       result.RanAt,
-			Signature:   result.Signature,
+			ModuleID:  session.ModuleID,
+			SectionID: session.SectionID,
+			Passed:    result.Passed,
+			Output:    result.Output,
+			RanAt:     result.RanAt,
+			Signature: result.Signature,
 		}
 		if saveErr := queue.Save(orbstackDir, entry); saveErr != nil {
 			fmt.Fprintf(os.Stderr, "warn: could not queue result: %v\n", saveErr)
@@ -67,11 +66,28 @@ func runCheck(args []string) error {
 	return nil
 }
 
-// postResult POSTs a validator result to the API.
-// If authToken is non-empty, it is sent as a Bearer token so the backend can
-// tie the result to a user account and award XP.
-func postResult(apiBaseURL, authToken string, r *validator.Result) error {
-	data, err := json.MarshalIndent(r, "", "  ")
+// resultPayload matches the new POST /results shape.
+type resultPayload struct {
+	ModuleID  string    `json:"module_id"`
+	SectionID string    `json:"section_id"`
+	Passed    bool      `json:"passed"`
+	Output    string    `json:"output"`
+	RanAt     time.Time `json:"ran_at"`
+	Signature string    `json:"signature"`
+}
+
+// postResult POSTs a validator result to the API with the new module/section shape.
+func postResult(apiBaseURL, authToken, moduleID, sectionID string, r *validator.Result) error {
+	payload := resultPayload{
+		ModuleID:  moduleID,
+		SectionID: sectionID,
+		Passed:    r.Passed,
+		Output:    r.Output,
+		RanAt:     r.RanAt,
+		Signature: r.Signature,
+	}
+
+	data, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
 		return err
 	}

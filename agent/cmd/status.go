@@ -36,7 +36,7 @@ func runStatus(args []string) error {
 	session, err := lab.ReadSession()
 	if err != nil {
 		fmt.Println("\nNo active lab session.")
-		fmt.Println("Run 'orbstack start <challenge-id>' to begin.")
+		fmt.Println("Run 'orbstack start <module-id>' to begin.")
 
 		pending := queue.Count(orbstackDir)
 		if pending > 0 {
@@ -48,7 +48,8 @@ func runStatus(args []string) error {
 	elapsed := time.Since(session.StartedAt).Round(time.Second)
 
 	fmt.Printf("\n● Active Lab\n")
-	fmt.Printf("  Challenge:  %s\n", session.ChallengeID)
+	fmt.Printf("  Module:     %s\n", session.ModuleID)
+	fmt.Printf("  Section:    %s\n", session.SectionID)
 	fmt.Printf("  Started:    %s\n", session.StartedAt.Format("15:04:05"))
 	fmt.Printf("  Elapsed:    %s\n", elapsed)
 	fmt.Printf("  Type:       %s\n", session.SetupType)

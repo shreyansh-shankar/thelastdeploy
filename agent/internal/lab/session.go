@@ -11,12 +11,13 @@ import (
 
 // Session represents an active lab session written to ~/.orbstack/session.json
 type Session struct {
-	ChallengeID   string    `json:"challenge_id"`
+	ModuleID      string    `json:"module_id"`
+	SectionID     string    `json:"section_id"`
 	StartedAt     time.Time `json:"started_at"`
 	ValidatorPath string    `json:"validator_path"`
 	SetupType     string    `json:"setup_type"`
 	// ContainerID is set for docker-type challenges; empty for shell-type.
-	ContainerID   string    `json:"container_id,omitempty"`
+	ContainerID string `json:"container_id,omitempty"`
 }
 
 func sessionPath() (string, error) {
@@ -32,7 +33,6 @@ func WriteSession(s *Session) error {
 	if err != nil {
 		return err
 	}
-	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func ReadSession() (*Session, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("no active lab session — run: orbstack start <challenge-id>")
+			return nil, fmt.Errorf("no active lab session — run: orbstack start <module-id>")
 		}
 		return nil, err
 	}

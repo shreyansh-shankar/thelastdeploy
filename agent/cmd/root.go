@@ -64,7 +64,7 @@ Usage:
   orbstack <command> [args]
 
 Commands:
-  sync              Download latest challenges from the OrbStack API
+  sync              Download latest modules from the OrbStack API
   start <id>        Start a lab environment for the given challenge
   stop              Stop the running lab environment
   check             Run the validator and report pass/fail

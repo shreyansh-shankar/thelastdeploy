@@ -4,13 +4,8 @@ package localserver
 // The local HTTP server runs on 127.0.0.1:7842.
 //
 // Security: binding to 127.0.0.1 (not 0.0.0.0) means this port is only
-// reachable from THIS machine. Requests from other devices on your network
-// or from the internet physically cannot reach it — the OS drops the packets
-// before they even reach our code. Think of it like localhost-only middleware
-// in Express: app.listen(7842, '127.0.0.1').
-//
-// The browser frontend talks to this server to check lab status and trigger
-// validation. It is NOT a public API.
+// reachable from THIS machine. The browser frontend talks to this server to
+// check lab status and trigger validation. It is NOT a public API.
 
 import (
 	"context"
@@ -41,7 +36,7 @@ func New(keyPath string) *Server {
 	mux.HandleFunc("/health", s.handleHealth)
 	mux.HandleFunc("/status", s.handleStatus)
 	mux.HandleFunc("/check", s.handleCheck)
-	mux.HandleFunc("/challenge", s.handleChallenge)
+	mux.HandleFunc("/session", s.handleSession)
 
 	s.httpServer = &http.Server{
 		Addr:         addr,
@@ -98,22 +93,26 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	elapsed := time.Since(session.StartedAt).Round(time.Second).String()
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"active":       true,
-		"challenge_id": session.ChallengeID,
-		"started_at":   session.StartedAt,
-		"elapsed":      elapsed,
-		"setup_type":   session.SetupType,
+		"active":     true,
+		"module_id":  session.ModuleID,
+		"section_id": session.SectionID,
+		"started_at": session.StartedAt,
+		"elapsed":    elapsed,
+		"setup_type": session.SetupType,
 	})
 }
 
-func (s *Server) handleChallenge(w http.ResponseWriter, r *http.Request) {
+// handleSession returns the current session details.
+// Renamed from /challenge to /session to match the new module/section model.
+func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	session, err := lab.ReadSession()
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no active lab session")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"challenge_id":   session.ChallengeID,
+		"module_id":      session.ModuleID,
+		"section_id":     session.SectionID,
 		"validator_path": session.ValidatorPath,
 		"started_at":     session.StartedAt,
 	})
@@ -129,17 +128,18 @@ func (s *Server) handleCheck(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "no active lab session")
 		return
 	}
-	result, err := validator.Run(session.ChallengeID, session.ValidatorPath, deviceKeyPath)
+	result, err := validator.Run(session.ModuleID, session.SectionID, session.ValidatorPath, deviceKeyPath)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("validator error: %v", err))
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"challenge_id": result.ChallengeID,
-		"passed":       result.Passed,
-		"output":       result.Output,
-		"ran_at":       result.RanAt,
-		"signature":    result.Signature,
+		"module_id":  result.ModuleID,
+		"section_id": result.SectionID,
+		"passed":     result.Passed,
+		"output":     result.Output,
+		"ran_at":     result.RanAt,
+		"signature":  result.Signature,
 	})
 }
 
@@ -155,7 +155,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 			"http://localhost:3000",
 			"http://localhost:3001",
 			"http://127.0.0.1:3000",
-			"https://orbstack.sh", // update when domain is confirmed
+			"https://orbstack.sh",
 		} {
 			if origin == o {
 				allowed = true

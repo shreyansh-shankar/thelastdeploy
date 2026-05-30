@@ -68,12 +68,11 @@ export const RANKS: Rank[] = [
   },
 ];
 
-export const TOTAL_CHALLENGES = 1; // increment as challenges are added
+// Total sections across all modules — increment as content grows
+export const TOTAL_SECTIONS = 3; // docker-fundamentals has 3 sections
 
 export function getRank(xp: number): Rank {
-  return (
-    [...RANKS].reverse().find((r) => xp >= r.minXp) ?? RANKS[0]
-  );
+  return [...RANKS].reverse().find((r) => xp >= r.minXp) ?? RANKS[0];
 }
 
 export function getNextRank(xp: number): Rank | null {

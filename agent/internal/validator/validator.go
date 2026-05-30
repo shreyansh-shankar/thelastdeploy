@@ -18,21 +18,18 @@ import (
 
 // Result holds the outcome of a validation run.
 type Result struct {
-	ChallengeID string    `json:"challenge_id"`
-	Passed      bool      `json:"passed"`
-	Output      string    `json:"output"`
-	RanAt       time.Time `json:"ran_at"`
-	Signature   string    `json:"signature"` // HMAC-SHA256 of payload
+	ModuleID  string    `json:"module_id"`
+	SectionID string    `json:"section_id"`
+	Passed    bool      `json:"passed"`
+	Output    string    `json:"output"`
+	RanAt     time.Time `json:"ran_at"`
+	Signature string    `json:"signature"` // HMAC-SHA256 of payload
 }
 
 // Run executes the validator script and returns a signed Result.
-//
-// Why sign it? Think of it like a JWT in a web app. When you POST the result
-// to our backend, anyone could craft a fake POST saying "I passed". The HMAC
-// signature proves the result was produced by this specific device's key —
-// without ever sending the key to the server. The server only needs to verify
-// the signature using the device's public key (which it learns at registration).
-func Run(challengeID, scriptPath, deviceKeyPath string) (*Result, error) {
+// moduleID and sectionID are included in the HMAC payload so the backend can
+// verify that the signature covers the specific section that was validated.
+func Run(moduleID, sectionID, scriptPath, deviceKeyPath string) (*Result, error) {
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("validator script not found: %s", scriptPath)
 	}
@@ -47,28 +44,27 @@ func Run(challengeID, scriptPath, deviceKeyPath string) (*Result, error) {
 	passed := err == nil
 
 	result := &Result{
-		ChallengeID: challengeID,
-		Passed:      passed,
-		Output:      output,
-		RanAt:       time.Now(),
+		ModuleID:  moduleID,
+		SectionID: sectionID,
+		Passed:    passed,
+		Output:    output,
+		RanAt:     time.Now(),
 	}
 
-	// Sign the result with the device key.
 	key, err := device.Key(deviceKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("device key: %w", err)
 	}
 	result.Signature = sign(result, key)
-
 	return result, nil
 }
 
-// sign produces an HMAC-SHA256 over the result fields (excluding Signature itself).
-// The payload is a deterministic string — same inputs always produce the same
-// signature, so the backend can reproduce it to verify.
+// sign produces an HMAC-SHA256 over the result fields (excluding Signature).
+// The payload is deterministic — same inputs always produce the same signature.
 func sign(r *Result, key []byte) string {
-	payload := fmt.Sprintf("%s:%v:%s:%s",
-		r.ChallengeID,
+	payload := fmt.Sprintf("%s:%s:%v:%s:%s",
+		r.ModuleID,
+		r.SectionID,
 		r.Passed,
 		r.Output,
 		r.RanAt.UTC().Format(time.RFC3339),

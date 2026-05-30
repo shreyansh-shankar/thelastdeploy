@@ -12,53 +12,51 @@ import (
 	"github.com/orbstack/agent/internal/cache"
 )
 
-// Start sets up the lab environment for a challenge.
-// It dispatches on challenge.SetupType: "shell", "docker", or "kind".
-func Start(c *cache.Challenge, challengesDir string) error {
+// Start sets up the lab environment for a module's practical section.
+// It dispatches on module.SetupType: "shell", "docker", or "kind".
+func Start(m *cache.Module, challengesDir string) error {
 	if SessionExists() {
 		existing, _ := ReadSession()
 		if existing != nil {
-			return fmt.Errorf("lab '%s' is already running — run 'orbstack stop' first", existing.ChallengeID)
+			return fmt.Errorf("lab '%s' is already running — run 'orbstack stop' first", existing.ModuleID)
 		}
 	}
 
 	fmt.Printf("\n╔══════════════════════════════════════════════╗\n")
-	fmt.Printf("║  OrbStack — Starting: %-24s║\n", truncate(c.Title, 24))
+	fmt.Printf("║  OrbStack — Starting: %-24s║\n", truncate(m.Title, 24))
 	fmt.Printf("╚══════════════════════════════════════════════╝\n\n")
 
 	session := &Session{
-		ChallengeID:   c.ID,
+		ModuleID:      m.ID,
+		SectionID:     m.PracticalSectionID,
 		StartedAt:     time.Now(),
-		ValidatorPath: filepath.Join(challengesDir, c.ID, c.ValidatorScript),
-		SetupType:     c.SetupType,
+		ValidatorPath: m.ValidatorScript,
+		SetupType:     m.SetupType,
 	}
 
-	switch c.SetupType {
+	switch m.SetupType {
 	case "shell", "":
-		if err := runShellSetup(c); err != nil {
+		if err := runShellSetup(m); err != nil {
 			return err
 		}
 
 	case "docker":
-		// Security note: resource limits (cpu, memory) from the YAML are
-		// enforced as --cpus and --memory flags passed to docker run.
-		// The container cannot exceed these limits regardless of what it runs.
-		containerID, err := StartDocker(c)
+		containerID, err := StartDocker(m)
 		if err != nil {
 			return err
 		}
 		session.ContainerID = containerID
 
 	case "kind":
-		if err := StartKind(c); err != nil {
+		if err := StartKind(m); err != nil {
 			return err
 		}
 
 	default:
-		return fmt.Errorf("unknown setup type: %q (must be shell, docker, or kind)", c.SetupType)
+		return fmt.Errorf("unknown setup type: %q (must be shell, docker, or kind)", m.SetupType)
 	}
 
-	// Ensure validator script is executable
+	// Ensure validator script is executable.
 	if _, err := os.Stat(session.ValidatorPath); err == nil {
 		os.Chmod(session.ValidatorPath, 0755)
 	}
@@ -67,21 +65,18 @@ func Start(c *cache.Challenge, challengesDir string) error {
 		return fmt.Errorf("write session: %w", err)
 	}
 
-	printChallenge(c)
+	printModule(m)
 	return nil
 }
 
 // Stop tears down whatever Start created.
-// Clean teardown matters: leftover containers or clusters consume CPU and RAM
-// in the background, and orphaned kind clusters clutter your kubectl contexts.
-// We always clean up completely so the user's machine is back to baseline.
 func Stop() error {
 	session, err := ReadSession()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Stopping lab: %s\n", session.ChallengeID)
+	fmt.Printf("Stopping lab: %s / %s\n", session.ModuleID, session.SectionID)
 	elapsed := time.Since(session.StartedAt).Round(time.Second)
 	fmt.Printf("Session duration: %s\n\n", elapsed)
 
@@ -91,7 +86,7 @@ func Stop() error {
 			fmt.Fprintf(os.Stderr, "warn: %v\n", err)
 		}
 	case "kind":
-		if err := StopKind(session.ChallengeID); err != nil {
+		if err := StopKind(session.ModuleID); err != nil {
 			fmt.Fprintf(os.Stderr, "warn: %v\n", err)
 		}
 	}
@@ -101,20 +96,17 @@ func Stop() error {
 	}
 
 	fmt.Println("✓ Lab stopped. Environment cleaned up.")
-	fmt.Println("  Run 'orbstack sync' to see available challenges.")
+	fmt.Println("  Run 'orbstack sync' to see available modules.")
 	return nil
 }
 
-// runShellSetup runs the seed_commands for shell-type challenges directly on
-// the host. This is safe because shell challenges are read-only env prep
-// (e.g. creating temp files, pulling images). Heavy compute always goes inside
-// Docker or kind.
-func runShellSetup(c *cache.Challenge) error {
-	if len(c.SeedCommands) == 0 {
+// runShellSetup runs seed_commands for shell-type modules directly on the host.
+func runShellSetup(m *cache.Module) error {
+	if len(m.SeedCommands) == 0 {
 		return nil
 	}
 	fmt.Println("⚙  Running setup commands...")
-	for _, command := range c.SeedCommands {
+	for _, command := range m.SeedCommands {
 		if err := runShellCommand(command); err != nil {
 			return fmt.Errorf("seed command failed [%s]: %w", command, err)
 		}
@@ -123,7 +115,6 @@ func runShellSetup(c *cache.Challenge) error {
 	return nil
 }
 
-// runShellCommand executes a single shell command string, streaming output.
 func runShellCommand(command string) error {
 	fmt.Printf("  $ %s\n", command)
 	parts := strings.Fields(command)
@@ -141,22 +132,14 @@ func runShellCommand(command string) error {
 	return cmd.Run()
 }
 
-func printChallenge(c *cache.Challenge) {
-	fmt.Printf("📋 Challenge: %s\n", c.Title)
-	fmt.Printf("   Topic:      %s\n", c.Topic)
-	fmt.Printf("   Difficulty: %s\n", c.Difficulty)
-	fmt.Printf("   XP reward:  %d\n", c.XP)
-	fmt.Printf("   Est. time:  ~%d minutes\n\n", c.EstimatedMinutes)
-	fmt.Printf("📝 Description:\n   %s\n\n", c.Description)
-	fmt.Printf("📌 Steps:\n")
-	for i, step := range c.Steps {
-		fmt.Printf("\n  %d. %s\n", i+1, step.Title)
-		fmt.Printf("     %s\n", step.Body)
-		if step.Hint != "" {
-			fmt.Printf("     💡 Hint: %s\n", step.Hint)
-		}
-	}
-	fmt.Printf("\n──────────────────────────────────────────────\n")
+func printModule(m *cache.Module) {
+	fmt.Printf("📋 Module:  %s\n", m.Title)
+	fmt.Printf("   Topic:      %s\n", m.Topic)
+	fmt.Printf("   Difficulty: %s\n", m.Difficulty)
+	fmt.Printf("   XP reward:  %d\n", m.PracticalSectionXP)
+	fmt.Printf("   Est. time:  ~%d minutes\n\n", m.EstimatedMinutes)
+	fmt.Printf("   Practical section: %s\n\n", m.PracticalSectionID)
+	fmt.Printf("──────────────────────────────────────────────\n")
 	fmt.Printf("When you're done, run:  orbstack check\n")
 	fmt.Printf("To quit:                Ctrl+C  (or orbstack stop)\n")
 	fmt.Printf("──────────────────────────────────────────────\n\n")
@@ -168,3 +151,8 @@ func truncate(s string, max int) string {
 	}
 	return s[:max-1] + "…"
 }
+
+// Ensure unused import doesn't break compile — filepath is used in Start
+// via the session ValidatorPath which is already an absolute path from
+// cache.LoadModule, so we only need it if we join paths here.
+var _ = filepath.Join
