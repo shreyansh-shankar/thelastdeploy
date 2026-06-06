@@ -21,6 +21,7 @@ export interface Section {
   id: string;
   title: string;
   order: number;
+  xp: number;                  // reading XP from section.yaml
   content: string | null;
   labs: Lab[];
   section_completed: boolean;  // true = reading scrolled to end (or future: questions done)

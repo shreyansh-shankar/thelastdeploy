@@ -89,6 +89,7 @@ async def seed():
                 if existing_section:
                     existing_section.title = section_data["title"]
                     existing_section.order = section_data["order"]
+                    existing_section.xp = section_data.get("xp", 10)
                     existing_section.content = content
                     db.add(existing_section)
                     print(f"    ↻ Updated section: {section_id}")
@@ -98,6 +99,7 @@ async def seed():
                         module_id=module_id,
                         title=section_data["title"],
                         order=section_data["order"],
+                        xp=section_data.get("xp", 10),
                         content=content,
                     ))
                     print(f"    ✅ Seeded section: {section_id}")

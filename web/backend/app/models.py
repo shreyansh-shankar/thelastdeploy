@@ -48,6 +48,7 @@ class Section(Base):
     module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     order: Mapped[int] = mapped_column(Integer, nullable=False)
+    xp: Mapped[int] = mapped_column(Integer, default=10)
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

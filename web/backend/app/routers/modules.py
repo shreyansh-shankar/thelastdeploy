@@ -16,7 +16,10 @@ from app.schemas import (
 
 router = APIRouter()
 
-XP_FOR_READING = 10
+
+def _total_xp(sections: list[Section], labs: list[Lab]) -> int:
+    """Total XP = sum of all section.xp (reading) + sum of all lab.xp."""
+    return sum(s.xp for s in sections) + sum(l.xp for l in labs)
 
 
 # ---------------------------------------------------------------------------
@@ -40,13 +43,9 @@ async def list_modules(
 
         lab_result = await db.execute(select(Lab).where(Lab.module_id == m.id))
         labs = lab_result.scalars().all()
-        total_xp = sum(lab.xp for lab in labs) + XP_FOR_READING * sum(
-            1 for s in sections if not any(l.section_id == s.id for l in labs)
-        )
 
         completed_sections = 0
         if current_user:
-            # Completed lab_ids for this user in this module
             lab_prog_result = await db.execute(
                 select(LabProgress.lab_id).where(
                     LabProgress.user_id == current_user.id,
@@ -56,7 +55,6 @@ async def list_modules(
             )
             completed_lab_ids = {row[0] for row in lab_prog_result.fetchall()}
 
-            # Completed section_ids (reading) for this user
             sec_prog_result = await db.execute(
                 select(SectionProgress.section_id).where(
                     SectionProgress.user_id == current_user.id,
@@ -69,11 +67,9 @@ async def list_modules(
             for section in sections:
                 section_labs = [l for l in labs if l.section_id == section.id]
                 if not section_labs:
-                    # Reading section — done via section_progress
                     if section.id in completed_section_ids:
                         completed_sections += 1
                 else:
-                    # Lab section — done when all labs complete
                     if {l.id for l in section_labs}.issubset(completed_lab_ids):
                         completed_sections += 1
 
@@ -86,7 +82,7 @@ async def list_modules(
             difficulty=m.difficulty,
             estimated_minutes=m.estimated_minutes,
             tags=tags,
-            total_xp=total_xp,
+            total_xp=_total_xp(sections, labs),
             total_sections=len(sections),
             completed_sections=completed_sections,
         ))
@@ -122,7 +118,6 @@ async def get_module_full(
     for lab in all_labs:
         labs_by_section.setdefault(lab.section_id, []).append(lab)
 
-    # Fetch lab progress
     lab_progress_map: dict[str, LabProgress] = {}
     completed_section_ids: set[str] = set()
 
@@ -168,15 +163,11 @@ async def get_module_full(
             id=s.id,
             title=s.title,
             order=s.order,
+            xp=s.xp,
             content=s.content,
             labs=lab_schemas,
             section_completed=s.id in completed_section_ids,
         ))
-
-    tags = [t.strip() for t in (module.tags or "").split(",") if t.strip()]
-    total_xp = sum(l.xp for l in all_labs) + XP_FOR_READING * sum(
-        1 for s in sections if not labs_by_section.get(s.id)
-    )
 
     return ModuleDetail(
         id=module.id,
@@ -185,8 +176,8 @@ async def get_module_full(
         topic=module.topic,
         difficulty=module.difficulty,
         estimated_minutes=module.estimated_minutes,
-        tags=tags,
-        total_xp=total_xp,
+        tags=[t.strip() for t in (module.tags or "").split(",") if t.strip()],
+        total_xp=_total_xp(sections, all_labs),
         total_sections=len(sections),
         sections=section_schemas,
     )
@@ -211,7 +202,6 @@ async def get_module_summary(
     lab_result = await db.execute(select(Lab).where(Lab.module_id == module_id))
     labs = lab_result.scalars().all()
 
-    tags = [t.strip() for t in (module.tags or "").split(",") if t.strip()]
     return ModuleSummary(
         id=module.id,
         title=module.title,
@@ -219,14 +209,14 @@ async def get_module_summary(
         topic=module.topic,
         difficulty=module.difficulty,
         estimated_minutes=module.estimated_minutes,
-        tags=tags,
-        total_xp=sum(l.xp for l in labs),
+        tags=[t.strip() for t in (module.tags or "").split(",") if t.strip()],
+        total_xp=_total_xp(sections, labs),
         total_sections=len(sections),
     )
 
 
 # ---------------------------------------------------------------------------
-# POST /modules/:id/sections/:id/complete — reading sections only
+# POST /modules/:id/sections/:id/complete — reading sections
 # ---------------------------------------------------------------------------
 
 @router.post(
@@ -239,7 +229,6 @@ async def complete_reading_section(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Called by frontend when user scrolls to end of a reading section."""
     sec_result = await db.execute(
         select(Section).where(
             Section.id == section_id,
@@ -250,7 +239,6 @@ async def complete_reading_section(
     if not section:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
 
-    # Only for sections without labs
     lab_check = await db.execute(select(Lab).where(Lab.section_id == section_id))
     if lab_check.scalars().all():
         raise HTTPException(
@@ -269,12 +257,13 @@ async def complete_reading_section(
     if existing and existing.completed:
         return CompleteSectionResponse(xp_awarded=0, total_xp=current_user.xp)
 
-    current_user.xp += XP_FOR_READING
+    xp = section.xp  # use xp from section.yaml, not hardcoded
+    current_user.xp += xp
     db.add(current_user)
 
     if existing:
         existing.completed = True
-        existing.xp_awarded = XP_FOR_READING
+        existing.xp_awarded = xp
         existing.completed_at = datetime.now(timezone.utc)
         db.add(existing)
     else:
@@ -283,12 +272,12 @@ async def complete_reading_section(
             module_id=module_id,
             section_id=section_id,
             completed=True,
-            xp_awarded=XP_FOR_READING,
+            xp_awarded=xp,
             completed_at=datetime.now(timezone.utc),
         ))
 
     await db.commit()
-    return CompleteSectionResponse(xp_awarded=XP_FOR_READING, total_xp=current_user.xp)
+    return CompleteSectionResponse(xp_awarded=xp, total_xp=current_user.xp)
 
 
 # ---------------------------------------------------------------------------

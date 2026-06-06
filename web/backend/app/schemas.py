@@ -54,10 +54,10 @@ class SectionSchema(BaseModel):
     id: str
     title: str
     order: int
+    xp: int = 10                    # reading XP from section.yaml
     content: str | None = None
     labs: list[LabSchema] = []
-    # section-level completion (reading scroll / future: questions)
-    section_completed: bool = False
+    section_completed: bool = False  # reading scroll / future: questions
 
     class Config:
         from_attributes = True
