@@ -18,6 +18,34 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    device_key: str
+
+
+# --- Labs ---
+
+class LabSchema(BaseModel):
+    id: str
+    title: str
+    order: int
+    xp: int
+    estimated_minutes: int | None = None
+    setup_type: str | None = None
+    seed_commands: str | None = None     # JSON string
+    resource_limits_cpu: int | None = None
+    resource_limits_mem: int | None = None
+    completed: bool = False
+    xp_awarded: int = 0
+
+    class Config:
+        from_attributes = True
+
+
+class LabDetail(BaseModel):
+    """Response for GET /labs/:id — includes location metadata for agent sync."""
+    id: str
+    module_id: str
+    section_id: str
+    data: LabSchema
 
 
 # --- Sections ---
@@ -25,12 +53,9 @@ class TokenResponse(BaseModel):
 class SectionSchema(BaseModel):
     id: str
     title: str
-    type: str
     order: int
-    xp: int
     content: str | None = None
-    completed: bool = False
-    xp_awarded: int = 0
+    labs: list[LabSchema] = []
 
     class Config:
         from_attributes = True
@@ -62,21 +87,34 @@ class ModuleDetail(BaseModel):
     estimated_minutes: int | None
     tags: list[str] = []
     total_xp: int
+    total_sections: int
     sections: list[SectionSchema]
 
+class ModuleSummary(BaseModel):
+    """Lightweight module info for GET /modules/:id (used by tld sync -m)."""
+    id: str
+    title: str
+    description: str | None
+    topic: str | None
+    difficulty: str | None
+    estimated_minutes: int | None
+    tags: list[str] = []
+    total_xp: int
+    total_sections: int
 
-# --- Section Progress ---
+
+# --- Lab Progress ---
 
 class CompleteSectionResponse(BaseModel):
     xp_awarded: int
     total_xp: int
 
 
-# --- Results (practical sections) ---
+# --- Results (from tld check) ---
 
 class ResultRequest(BaseModel):
-    module_id: str
-    section_id: str
+    lab_id: str           # globally unique lab ID, e.g. "dkr-run-hello"
+    section_id: str       # for context/logging
     passed: bool
     output: str | None = None
     ran_at: datetime | None = None
@@ -95,7 +133,7 @@ class MeResponse(BaseModel):
     email: str
     xp: int
     streak_days: int
-    completed_sections: list[str]
+    completed_labs: list[str]        # lab IDs
 
 class LeaderboardEntry(BaseModel):
     rank: int

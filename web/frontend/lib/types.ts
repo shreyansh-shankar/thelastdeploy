@@ -2,17 +2,27 @@
 
 export type Topic = "docker" | "kubernetes" | "linux" | "cicd";
 export type Difficulty = "beginner" | "intermediate" | "advanced";
-export type SectionType = "reading" | "practical";
+
+export interface Lab {
+  id: string;
+  title: string;
+  order: number;
+  xp: number;
+  estimated_minutes: number | null;
+  setup_type: string | null;
+  seed_commands: string | null;
+  resource_limits_cpu: number | null;
+  resource_limits_mem: number | null;
+  completed: boolean;
+  xp_awarded: number;
+}
 
 export interface Section {
   id: string;
   title: string;
-  type: SectionType;
   order: number;
-  xp: number;
   content: string | null;
-  completed: boolean;
-  xp_awarded: number;
+  labs: Lab[];
 }
 
 export interface Module {
@@ -38,7 +48,7 @@ export interface User {
   email: string;
   xp: number;
   streak_days: number;
-  completed_sections: string[];
+  completed_labs: string[];   // lab IDs
 }
 
 export interface LeaderboardEntry {

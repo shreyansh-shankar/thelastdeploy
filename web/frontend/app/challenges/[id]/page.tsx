@@ -169,7 +169,7 @@ export default function ChallengeDetailPage() {
                   <p className="text-sm text-[#666] mt-0.5">
                     Run{" "}
                     <code className="font-mono text-xs px-1.5 py-0.5 rounded bg-[#1a1a1a] text-[#aaa]">
-                      orbstack check
+                      tld check
                     </code>{" "}
                     in your terminal, then hit Refresh Progress.
                   </p>
@@ -218,16 +218,16 @@ export default function ChallengeDetailPage() {
         <div className="px-6 py-5 font-mono text-sm space-y-2">
           <p>
             <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
-            <span className="text-white">orbstack sync</span>
+            <span className="text-white">tld sync</span>
           </p>
           <p>
             <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
-            <span className="text-white">orbstack start {challenge.id}</span>
+            <span className="text-white">tld start {challenge.id}</span>
           </p>
           <p className="text-[#555]"># Complete the steps shown in your terminal</p>
           <p>
             <span style={{ color: "var(--accent-primary)" }}>❯</span>{" "}
-            <span className="text-white">orbstack check</span>
+            <span className="text-white">tld check</span>
           </p>
           <p className="text-[#555]"># Then hit "Refresh Progress" above</p>
         </div>

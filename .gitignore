@@ -46,7 +46,7 @@ desktop.ini
 *.sublime-workspace
 
 # Go
-/bin/orbstack
+/bin/tld
 *.exe
 *.test
 *.out

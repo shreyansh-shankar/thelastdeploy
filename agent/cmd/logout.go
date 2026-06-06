@@ -4,7 +4,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/orbstack/agent/internal/config"
+	"github.com/thelastdeploy/agent/internal/config"
 )
 
 func runLogout(args []string) error {
@@ -24,6 +24,6 @@ func runLogout(args []string) error {
 	}
 
 	fmt.Println("✓ Logged out.")
-	fmt.Println("  Run 'orbstack login' to authenticate again.")
+	fmt.Println("  Run 'tld login' to authenticate again.")
 	return nil
 }

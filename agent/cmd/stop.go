@@ -1,20 +1,17 @@
-// agent/cmd/stop.go
+// cmd/stop.go
 package cmd
 
 import (
-	"fmt"
-	"net/http"
-	"time"
-
-	"github.com/orbstack/agent/internal/lab"
-	"github.com/orbstack/agent/internal/localserver"
+	"github.com/thelastdeploy/agent/internal/lab"
+	"github.com/thelastdeploy/agent/internal/localserver"
 )
 
 func runStop(args []string) error {
-	if localserver.IsRunning() {
-		client := &http.Client{Timeout: 2 * time.Second}
-		client.Get("http://127.0.0.1:7842/health") // best-effort ping
-		fmt.Println("Note: local server still running — press Ctrl+C in the 'orbstack start' terminal to stop it.")
+	// Stop the lab environment (tears down docker/kind/shell, clears session).
+	if err := lab.Stop(); err != nil {
+		return err
 	}
-	return lab.Stop()
+	// Shut down the background local server if it is running.
+	localserver.Shutdown()
+	return nil
 }

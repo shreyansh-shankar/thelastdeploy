@@ -1,72 +1,51 @@
-// agent/cmd/start.go
+// cmd/start.go
 package cmd
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
-	"path/filepath"
-	"syscall"
 
-	"github.com/orbstack/agent/internal/cache"
-	"github.com/orbstack/agent/internal/config"
-	"github.com/orbstack/agent/internal/lab"
-	"github.com/orbstack/agent/internal/localserver"
+	"github.com/thelastdeploy/agent/internal/cache"
+	"github.com/thelastdeploy/agent/internal/config"
+	"github.com/thelastdeploy/agent/internal/lab"
+	"github.com/thelastdeploy/agent/internal/localserver"
 )
 
 func runStart(args []string) error {
 	if len(args) < 1 {
-		return errors.New("usage: orbstack start <module-id>")
+		return errors.New("usage: tld start <lab-id>")
 	}
-	moduleID := args[0]
+	labID := args[0]
 
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	// Check that the module directory exists in the cache (either module.json
-	// from API sync or module.yaml from local sync will be inside it).
-	moduleDir := filepath.Join(cfg.ChallengesDir, moduleID)
-	if _, err := os.Stat(moduleDir); os.IsNotExist(err) {
-		return fmt.Errorf("module '%s' not found — run 'orbstack sync' first", moduleID)
-	}
-
-	// LoadModule handles both module.json (API sync) and module.yaml (local sync).
-	m, err := cache.LoadModule(cfg.ChallengesDir, moduleID)
+	// Find the lab by its globally-unique ID across all modules/sections.
+	l, err := cache.FindLab(cfg.ChallengesDir, labID)
 	if err != nil {
-		return fmt.Errorf("load module: %w", err)
-	}
-
-	if m.PracticalSectionID == "" {
-		return fmt.Errorf("module '%s' has no practical section — nothing to start", moduleID)
-	}
-
-	if err := lab.Start(m, cfg.ChallengesDir); err != nil {
 		return err
 	}
 
+	if err := lab.Start(l); err != nil {
+		return err
+	}
+
+	// Start the local server in the background — non-blocking.
 	if localserver.IsRunning() {
 		fmt.Println("  (local server already running on :7842)")
 		return nil
 	}
 
 	srv := localserver.New(cfg.DeviceKeyPath)
-	ctx, cancel := context.WithCancel(context.Background())
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-sigCh
-		fmt.Println("\nInterrupt received — stopping lab...")
-		cancel()
-		lab.Stop()
+		if err := srv.StartBackground(); err != nil {
+			fmt.Fprintf(os.Stderr, "warn: local server stopped: %v\n", err)
+		}
 	}()
 
-	if err := srv.Start(ctx); err != nil {
-		return fmt.Errorf("local server: %w", err)
-	}
+	fmt.Println("  Local API server started on http://127.0.0.1:7842")
 	return nil
 }

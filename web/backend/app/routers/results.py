@@ -1,14 +1,41 @@
 # web/backend/app/routers/results.py
 
+import hashlib
+import hmac
+import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.dependencies import get_db, get_optional_user
-from app.models import Section, SectionProgress, User
+from app.models import Lab, LabProgress, User
 from app.schemas import ResultRequest, ResultResponse
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+def _verify_signature(body: ResultRequest, device_key: str) -> bool:
+    """
+    Verify HMAC-SHA256 signature using the user's per-device key.
+    Payload format: lab_id:section_id:passed:output:timestamp (RFC3339 UTC)
+    """
+    if not body.signature or not body.ran_at:
+        return False
+
+    timestamp = body.ran_at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    passed_str = "true" if body.passed else "false"
+    output_str = body.output or ""
+
+    payload = f"{body.lab_id}:{body.section_id}:{passed_str}:{output_str}:{timestamp}"
+
+    expected = hmac.new(
+        device_key.encode(),
+        payload.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    return hmac.compare_digest(expected, body.signature)
 
 
 @router.post("/results", response_model=ResultResponse)
@@ -17,29 +44,45 @@ async def submit_result(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
-    # verify section exists
-    result = await db.execute(
-        select(Section).where(
-            Section.id == body.section_id,
-            Section.module_id == body.module_id,
-        )
-    )
-    section = result.scalar_one_or_none()
-    if not section:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
+    # 1. Signature verification — requires authenticated user with device_key
+    if body.signature:
+        if not current_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required to submit signed results",
+            )
+        if not current_user.device_key:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No device key found — please log in again with tld login",
+            )
+        if not _verify_signature(body, current_user.device_key):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid signature",
+            )
 
+    # 2. Look up lab by globally unique lab_id
+    result = await db.execute(
+        select(Lab).where(Lab.id == body.lab_id)
+    )
+    lab = result.scalar_one_or_none()
+    if not lab:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lab not found")
+
+    # 3. If not passed, return early — no XP
     if not body.passed:
         return ResultResponse(xp_awarded=0)
 
-    # unauthenticated — just return XP value, don't store
+    # 4. Unauthenticated — return XP value but don't persist
     if not current_user:
-        return ResultResponse(xp_awarded=section.xp)
+        return ResultResponse(xp_awarded=lab.xp)
 
-    # check if already completed
+    # 5. Check if already completed
     prog_result = await db.execute(
-        select(SectionProgress).where(
-            SectionProgress.user_id == current_user.id,
-            SectionProgress.section_id == body.section_id,
+        select(LabProgress).where(
+            LabProgress.user_id == current_user.id,
+            LabProgress.lab_id == body.lab_id,
         )
     )
     existing = prog_result.scalar_one_or_none()
@@ -47,24 +90,26 @@ async def submit_result(
     if existing and existing.completed:
         return ResultResponse(xp_awarded=0)
 
-    # first completion — award XP
-    current_user.xp += section.xp
+    # 6. First completion — award XP
+    current_user.xp += lab.xp
     db.add(current_user)
 
     if existing:
         existing.completed = True
-        existing.xp_awarded = section.xp
+        existing.xp_awarded = lab.xp
         existing.completed_at = datetime.now(timezone.utc)
         db.add(existing)
     else:
-        db.add(SectionProgress(
+        db.add(LabProgress(
             user_id=current_user.id,
-            module_id=body.module_id,
-            section_id=body.section_id,
+            lab_id=body.lab_id,
+            section_id=lab.section_id,
+            module_id=lab.module_id,
             completed=True,
-            xp_awarded=section.xp,
+            xp_awarded=lab.xp,
             completed_at=datetime.now(timezone.utc),
         ))
 
     await db.commit()
-    return ResultResponse(xp_awarded=section.xp)
+    logger.info("Lab completed: user=%s lab=%s xp=%d", current_user.id, body.lab_id, lab.xp)
+    return ResultResponse(xp_awarded=lab.xp)

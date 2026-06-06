@@ -23,8 +23,8 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { access_token } = await api.login(email, password);
-      await login(access_token);
+      const { access_token, device_key } = await api.login(email, password);
+      await login(access_token, device_key);
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -36,13 +36,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Logo mark */}
         <div className="mb-8">
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
             style={{ backgroundColor: "var(--accent-primary)" }}
           >
-            <span className="text-black font-black text-xl">O</span>
+            <span className="text-black font-black text-xl">T</span>
           </div>
           <h1 className="text-3xl font-black">Welcome back</h1>
           <p className="text-[#666] text-sm mt-1">Log in to track your progress</p>

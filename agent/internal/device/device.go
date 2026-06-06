@@ -12,7 +12,7 @@ import (
 // Key returns the 32-byte device key, generating and storing it on first call.
 //
 // Security rule: the key is generated locally using crypto/rand and never
-// leaves the machine. It lives at ~/.orbstack/device.key with permissions 0600.
+// leaves the machine. It lives at ~/.tld/device.key with permissions 0600.
 // We use it only to sign validator results so the backend can verify they came
 // from a real run on this device — not from someone manually crafting a POST.
 //

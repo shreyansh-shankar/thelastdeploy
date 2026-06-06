@@ -4,27 +4,10 @@ description: "Learn containerization from scratch — understand what Docker is,
 topic: docker
 difficulty: beginner
 estimated_minutes: 30
-tags:
-  - docker
-  - containers
-  - beginner
-
-# Resource limits for practical sections
-resource_limits:
-  cpu: 1
-  memory_mb: 512
-
-# Setup run before any practical section starts
-setup:
-  type: shell
-  seed_commands: []
-
-# Sections are defined in sections/*/section.yaml
-# This list controls display order
 sections:
-  - id: what-is-docker
+  - id: 01-what-is-docker
     order: 1
-  - id: installing-docker
+  - id: 02-installing-docker
     order: 2
-  - id: run-first-container
+  - id: 03-run-first-container
     order: 3

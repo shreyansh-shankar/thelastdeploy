@@ -28,13 +28,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   // Auth
   register: (email: string, username: string, password: string) =>
-    request<{ access_token: string }>("/register", {
+    request<{ access_token: string; device_key: string }>("/register", {
       method: "POST",
       body: JSON.stringify({ email, username, password }),
     }),
 
   login: (email: string, password: string) =>
-    request<{ access_token: string }>("/login", {
+    request<{ access_token: string; device_key: string }>("/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
@@ -43,14 +43,9 @@ export const api = {
   getModules: () =>
     request<{ modules: Module[] }>("/modules"),
 
+  // Full detail with sections + labs (for module detail page)
   getModule: (id: string) =>
-    request<ModuleDetail>(`/modules/${id}`),
-
-  completeSection: (moduleId: string, sectionId: string) =>
-    request<{ xp_awarded: number; total_xp: number }>(
-      `/modules/${moduleId}/sections/${sectionId}/complete`,
-      { method: "POST" }
-    ),
+    request<ModuleDetail>(`/modules/${id}/full`),
 
   // Users
   getMe: () => request<User>("/me"),

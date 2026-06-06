@@ -1,6 +1,7 @@
 # web/backend/seed/seed_modules.py
 
 import asyncio
+import json
 import os
 import sys
 import yaml
@@ -9,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from sqlalchemy import select
 from app.database import AsyncSessionLocal
-from app.models import Module, Section
+from app.models import Module, Section, Lab
 
 CHALLENGES_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "challenges")
@@ -31,10 +32,9 @@ async def seed():
 
             module_id = module_data["id"]
 
-            # upsert module
+            # ── Upsert Module ──────────────────────────────────────────
             result = await db.execute(select(Module).where(Module.id == module_id))
             existing_module = result.scalar_one_or_none()
-
             tags = ",".join(module_data.get("tags", []))
 
             if existing_module:
@@ -60,7 +60,7 @@ async def seed():
                 ))
                 print(f"  ✅ Seeded module: {module_id}")
 
-            # seed sections
+            # ── Sections ───────────────────────────────────────────────
             sections_dir = os.path.join(module_path, "sections")
             if not os.path.isdir(sections_dir):
                 continue
@@ -88,9 +88,7 @@ async def seed():
 
                 if existing_section:
                     existing_section.title = section_data["title"]
-                    existing_section.type = section_data["type"]
                     existing_section.order = section_data["order"]
-                    existing_section.xp = section_data.get("xp", 0)
                     existing_section.content = content
                     db.add(existing_section)
                     print(f"    ↻ Updated section: {section_id}")
@@ -99,12 +97,66 @@ async def seed():
                         id=section_id,
                         module_id=module_id,
                         title=section_data["title"],
-                        type=section_data["type"],
                         order=section_data["order"],
-                        xp=section_data.get("xp", 0),
                         content=content,
                     ))
                     print(f"    ✅ Seeded section: {section_id}")
+
+                # ── Labs ───────────────────────────────────────────────
+                labs_dir = os.path.join(section_path, "labs")
+                if not os.path.isdir(labs_dir):
+                    continue
+
+                for lab_dir in sorted(os.listdir(labs_dir)):
+                    lab_path = os.path.join(labs_dir, lab_dir)
+                    lab_yaml_path = os.path.join(lab_path, "lab.yaml")
+
+                    if not os.path.isdir(lab_path) or not os.path.exists(lab_yaml_path):
+                        continue
+
+                    with open(lab_yaml_path) as f:
+                        raw_lab_yaml = f.read()
+                        lab_data = yaml.safe_load(raw_lab_yaml)
+
+                    lab_id = lab_data["id"]
+
+                    # seed_commands is a list in YAML → store as JSON string
+                    seed_commands = lab_data.get("seed_commands", [])
+                    seed_commands_json = json.dumps(seed_commands) if seed_commands else None
+
+                    resource_limits = lab_data.get("resource_limits", {})
+
+                    result = await db.execute(select(Lab).where(Lab.id == lab_id))
+                    existing_lab = result.scalar_one_or_none()
+
+                    if existing_lab:
+                        existing_lab.title = lab_data["title"]
+                        existing_lab.order = lab_data.get("order", 0)
+                        existing_lab.xp = lab_data.get("xp", 0)
+                        existing_lab.estimated_minutes = lab_data.get("estimated_minutes")
+                        existing_lab.setup_type = lab_data.get("setup_type")
+                        existing_lab.seed_commands = seed_commands_json
+                        existing_lab.resource_limits_cpu = resource_limits.get("cpu")
+                        existing_lab.resource_limits_mem = resource_limits.get("mem")
+                        existing_lab.yaml_content = raw_lab_yaml
+                        db.add(existing_lab)
+                        print(f"      ↻ Updated lab: {lab_id}")
+                    else:
+                        db.add(Lab(
+                            id=lab_id,
+                            module_id=module_id,
+                            section_id=section_id,
+                            title=lab_data["title"],
+                            order=lab_data.get("order", 0),
+                            xp=lab_data.get("xp", 0),
+                            estimated_minutes=lab_data.get("estimated_minutes"),
+                            setup_type=lab_data.get("setup_type"),
+                            seed_commands=seed_commands_json,
+                            resource_limits_cpu=resource_limits.get("cpu"),
+                            resource_limits_mem=resource_limits.get("mem"),
+                            yaml_content=raw_lab_yaml,
+                        ))
+                        print(f"      ✅ Seeded lab: {lab_id}")
 
         await db.commit()
         print("\nDone.")

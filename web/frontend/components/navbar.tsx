@@ -49,7 +49,7 @@ export function Navbar() {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--accent-primary)" }}>
             <span className="text-black font-black text-sm">O</span>
           </div>
-          <span className="font-black text-lg tracking-tight">OrbStack</span>
+          <span className="font-black text-lg tracking-tight">The Last Deploy</span>
         </Link>
 
         {/* Nav links */}

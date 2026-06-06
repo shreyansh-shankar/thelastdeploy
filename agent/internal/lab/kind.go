@@ -1,19 +1,18 @@
-// agent/internal/lab/kind.go
+// internal/lab/kind.go
 package lab
 
 import (
 	"fmt"
 	"os/exec"
 
-	"github.com/orbstack/agent/internal/cache"
+	"github.com/thelastdeploy/agent/internal/cache"
 )
 
-// StartKind creates a kind cluster for the given module.
-func StartKind(m *cache.Module) error {
+func StartKind(lab *cache.Lab) error {
 	if err := checkKindInstalled(); err != nil {
 		return err
 	}
-	clusterName := "orbstack-" + m.ID
+	clusterName := "tld-" + lab.ID
 	fmt.Printf("  Creating kind cluster: %s\n", clusterName)
 	out, err := exec.Command("kind", "create", "cluster", "--name", clusterName).CombinedOutput()
 	if err != nil {
@@ -24,12 +23,11 @@ func StartKind(m *cache.Module) error {
 	return nil
 }
 
-// StopKind deletes the kind cluster for the given module ID.
-func StopKind(moduleID string) error {
+func StopKind(labID string) error {
 	if err := checkKindInstalled(); err != nil {
-		return nil // cluster can't exist if kind isn't installed
+		return nil
 	}
-	clusterName := "orbstack-" + moduleID
+	clusterName := "tld-" + labID
 	fmt.Printf("  Deleting kind cluster: %s\n", clusterName)
 	out, err := exec.Command("kind", "delete", "cluster", "--name", clusterName).CombinedOutput()
 	if err != nil {

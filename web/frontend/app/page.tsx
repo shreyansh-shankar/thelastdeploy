@@ -99,15 +99,15 @@ export default function HomePage() {
             <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
             <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
             <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-            <span className="ml-3 text-xs text-[#555] font-mono">orbstack — zsh</span>
+            <span className="ml-3 text-xs text-[#555] font-mono">tld — zsh</span>
           </div>
           <div className="px-5 py-5 space-y-2 font-mono text-sm">
-            <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack sync</span></p>
+            <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">tld sync</span></p>
             <p className="text-[#555]">  ✓ docker-hello</p>
             <p className="text-[#555]">  ✓ k8s-first-pod</p>
-            <p className="mt-3"><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack start docker-hello</span></p>
+            <p className="mt-3"><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">tld start docker-hello</span></p>
             <p className="text-[#555]">  Lab ready. Follow the steps above.</p>
-            <p className="mt-3"><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack check</span></p>
+            <p className="mt-3"><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">tld check</span></p>
             <p style={{ color: "var(--accent-primary)" }} className="font-semibold">  ✅ PASSED — 🎉 +50 XP awarded!</p>
           </div>
         </div>

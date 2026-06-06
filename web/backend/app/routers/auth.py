@@ -1,5 +1,6 @@
 # web/backend/app/routers/auth.py
 
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -11,9 +12,15 @@ from app.schemas import RegisterRequest, LoginRequest, TokenResponse
 router = APIRouter()
 
 
+def _ensure_device_key(user: User) -> str:
+    """Generate and assign a device_key if the user doesn't have one yet."""
+    if not user.device_key:
+        user.device_key = secrets.token_hex(32)  # 64 char hex
+    return user.device_key
+
+
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    # Check if email or username already taken
     result = await db.execute(
         select(User).where((User.email == body.email) | (User.username == body.username))
     )
@@ -28,13 +35,14 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         email=body.email,
         username=body.username,
         password_hash=hash_password(body.password),
+        device_key=secrets.token_hex(32),  # assign at registration
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
 
     token = create_access_token(user.id)
-    return TokenResponse(access_token=token)
+    return TokenResponse(access_token=token, device_key=user.device_key)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -48,5 +56,10 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
             detail="Invalid email or password",
         )
 
+    # Ensure device_key exists (handles existing users who registered before this change)
+    _ensure_device_key(user)
+    db.add(user)
+    await db.commit()
+
     token = create_access_token(user.id)
-    return TokenResponse(access_token=token)
+    return TokenResponse(access_token=token, device_key=user.device_key)

@@ -1,36 +1,36 @@
-# Makefile — OrbStack agent
+# Makefile — The Last Deploy agent
 .PHONY: build run sync start stop check status login logout clean install
 
 build:
-	cd agent && go get golang.org/x/term && go build -o ../bin/orbstack .
+	cd agent && go get golang.org/x/term && go build -o ../bin/tld .
 
-# Install to /usr/local/bin so `orbstack` works from anywhere.
+# Install to /usr/local/bin so `tld` works from anywhere.
 # Requires sudo on most systems.
 install: build
-	cp bin/orbstack /usr/local/bin/orbstack
-	@echo "Installed: /usr/local/bin/orbstack"
+	cp bin/tld /usr/local/bin/tld
+	@echo "Installed: /usr/local/bin/tld"
 
 # Quick dev targets — run from repo root
 sync: build
-	./bin/orbstack sync
+	./bin/tld sync
 
 start: build
-	./bin/orbstack start $(ID)
+	./bin/tld start $(ID)
 
 stop: build
-	./bin/orbstack stop
+	./bin/tld stop
 
 check: build
-	./bin/orbstack check
+	./bin/tld check
 
 status: build
-	./bin/orbstack status
+	./bin/tld status
 
 login: build
-	./bin/orbstack login
+	./bin/tld login
 
 logout: build
-	./bin/orbstack logout
+	./bin/tld logout
 
 clean:
 	rm -rf bin/

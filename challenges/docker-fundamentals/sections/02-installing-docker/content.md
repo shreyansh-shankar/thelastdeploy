@@ -1,12 +1,25 @@
 ## Installing Docker
 
-Docker runs on Linux, macOS, and Windows. The installation method differs slightly per platform.
+Docker Desktop is the easiest way to get Docker running on your local machine. It bundles the Docker daemon, CLI, and a GUI into a single installer.
 
 ---
 
-## Linux (Ubuntu/Debian)
+## macOS
 
-The recommended way is using the official Docker repository:
+1. Download Docker Desktop from [docs.docker.com/desktop/install/mac-install](https://docs.docker.com/desktop/install/mac-install/)
+2. Open the `.dmg` and drag Docker to Applications
+3. Launch Docker Desktop from Applications
+4. Wait for the whale icon in the menu bar to stop animating — Docker is ready
+
+```bash
+# Verify installation
+docker --version
+docker run hello-world
+```
+
+---
+
+## Linux (Ubuntu / Debian)
 
 ```bash
 # Remove old versions if any
@@ -14,7 +27,7 @@ sudo apt-get remove docker docker-engine docker.io containerd runc
 
 # Install dependencies
 sudo apt-get update
-sudo apt-get install ca-certificates curl gnupg
+sudo apt-get install -y ca-certificates curl gnupg
 
 # Add Docker's official GPG key
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -30,93 +43,48 @@ echo \
 
 # Install Docker Engine
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-```
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
-After installing, add your user to the docker group so you don't need `sudo`:
-
-```bash
+# Allow running docker without sudo
 sudo usermod -aG docker $USER
 newgrp docker
-```
-
-Verify:
-
-```bash
-docker --version
-# Docker version 27.x.x, build xxxxxxx
-```
-
----
-
-## macOS
-
-Install **Docker Desktop** — it includes the Docker Engine, CLI, and a GUI dashboard.
-
-1. Download from [docs.docker.com/desktop/install/mac-install](https://docs.docker.com/desktop/install/mac-install/)
-2. Open the `.dmg` and drag Docker to Applications
-3. Launch Docker Desktop from Applications
-4. Wait for the whale icon in the menu bar to stop animating
-
-Verify in Terminal:
-
-```bash
-docker --version
 ```
 
 ---
 
 ## Windows
 
-Install **Docker Desktop** with WSL 2 backend (recommended):
-
-1. Install WSL 2 first: `wsl --install` in PowerShell (admin)
+1. Enable WSL 2 — Docker Desktop requires it on Windows
 2. Download Docker Desktop from [docs.docker.com/desktop/install/windows-install](https://docs.docker.com/desktop/install/windows-install/)
-3. Run the installer, ensure "Use WSL 2 instead of Hyper-V" is checked
-4. Launch Docker Desktop
-5. Verify in PowerShell: `docker --version`
+3. Run the installer and restart when prompted
+4. Launch Docker Desktop — it starts automatically with Windows after install
 
 ---
 
-## Verifying Your Installation
+## Verify Your Installation
 
-Once installed on any platform, run a quick sanity check:
+Run these commands in a terminal to confirm everything is working:
 
 ```bash
-# Check Docker version
+# Check the CLI is available
 docker --version
+# Docker version 26.x.x, build ...
 
-# Check Docker is running
+# Check the daemon is running
 docker info
+# Should print system info — no errors
 
-# Run the test container (we'll do this properly in the next section)
+# Run a test container
 docker run hello-world
+# Should print "Hello from Docker!"
 ```
 
-If `docker info` returns engine information without errors, you're good to go.
+If `docker info` returns a connection error, the Docker daemon isn't running — open Docker Desktop and wait for it to fully start.
 
 ---
 
-## Common Issues
+## Quick Recap
 
-**Permission denied on Linux**
-```bash
-# You forgot to add yourself to the docker group
-sudo usermod -aG docker $USER
-# Then log out and back in, or run:
-newgrp docker
-```
-
-**Docker Desktop not starting on Mac/Windows**
-- Make sure virtualisation is enabled in BIOS (Windows)
-- Check you have at least 4GB RAM available
-- Restart Docker Desktop from the system tray
-
----
-
-## Recap
-
-- Linux: install via apt with the official Docker repository
-- macOS/Windows: install Docker Desktop
-- Always verify with `docker --version` and `docker info`
-- On Linux, add yourself to the `docker` group to avoid `sudo`
+- **macOS / Windows**: use Docker Desktop — it handles everything
+- **Linux**: install Docker Engine via apt/yum, add your user to the `docker` group
+- Verify with `docker run hello-world` — if it prints a greeting, you're ready

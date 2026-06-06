@@ -10,7 +10,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "OrbStack — DevOps Practice Platform",
+  title: "The Last Deploy — DevOps Practice Platform",
   description: "Learn Kubernetes, Docker, CI/CD and Linux by doing.",
 };
 

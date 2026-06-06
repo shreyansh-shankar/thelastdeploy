@@ -6,14 +6,14 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { ModuleDetail, Section } from "@/lib/types";
+import { ModuleDetail, Section, Lab } from "@/lib/types";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { DifficultyBadge } from "@/components/challenges/difficulty-badge";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   CheckCircle2, Circle, Lock, ChevronRight,
-  Zap, Clock, ArrowLeft, Terminal, RefreshCw, BookOpen, Wrench,
+  Zap, ArrowLeft, Terminal, RefreshCw, BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -30,7 +30,6 @@ export default function ModuleDetailPage() {
   const [module, setModule] = useState<ModuleDetail | null>(null);
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,21 +50,7 @@ export default function ModuleDetailPage() {
 
   useEffect(() => { fetchModule(); }, [fetchModule]);
 
-  const handleCompleteReading = async () => {
-    if (!activeSection || !user || activeSection.completed) return;
-    setCompleting(true);
-    try {
-      await api.completeSection(id, activeSection.id);
-      await fetchModule();
-      await refreshUser();
-    } catch (e: unknown) {
-      console.error(e);
-    } finally {
-      setCompleting(false);
-    }
-  };
-
-  const handleRefreshPractical = async () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
     await fetchModule();
     await refreshUser();
@@ -78,8 +63,15 @@ export default function ModuleDetailPage() {
   );
 
   const topic = topicConfig[module.topic] ?? topicConfig.docker;
-  const completedCount = module.sections.filter((s) => s.completed).length;
-  const progressPct = Math.round((completedCount / module.sections.length) * 100);
+
+  // A section is complete when all its labs are complete
+  const isSectionComplete = (section: Section) =>
+    section.labs.length > 0 && section.labs.every((l) => l.completed);
+
+  const completedCount = module.sections.filter(isSectionComplete).length;
+  const progressPct = module.sections.length > 0
+    ? Math.round((completedCount / module.sections.length) * 100)
+    : 0;
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
@@ -137,7 +129,10 @@ export default function ModuleDetailPage() {
             <div className="flex flex-col gap-1">
               {module.sections.map((section, idx) => {
                 const isActive = activeSection?.id === section.id;
-                const isLocked = idx > 0 && !module.sections[idx - 1].completed && !section.completed;
+                const completed = isSectionComplete(section);
+                const prevCompleted = idx === 0 || isSectionComplete(module.sections[idx - 1]);
+                const isLocked = !prevCompleted && !completed;
+                const sectionXp = section.labs.reduce((sum, l) => sum + l.xp, 0);
 
                 return (
                   <button
@@ -149,7 +144,7 @@ export default function ModuleDetailPage() {
                     } ${isActive ? "bg-[#1a1a1a] border border-[#2a2a2a]" : "hover:bg-[#111]"}`}
                   >
                     <div className="shrink-0 mt-0.5">
-                      {section.completed ? (
+                      {completed ? (
                         <CheckCircle2 className="h-4 w-4" style={{ color: "var(--accent-primary)" }} />
                       ) : isLocked ? (
                         <Lock className="h-4 w-4 text-[#444]" />
@@ -159,23 +154,20 @@ export default function ModuleDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className={`text-xs font-semibold leading-snug truncate ${
-                        isActive ? "text-white" : section.completed ? "text-[#888]" : "text-[#666]"
+                        isActive ? "text-white" : completed ? "text-[#888]" : "text-[#666]"
                       }`}>
                         {section.title}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        {section.type === "reading" ? (
-                          <span className="text-[10px] text-[#444] flex items-center gap-0.5">
-                            <BookOpen className="h-2.5 w-2.5" /> Reading
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-[#444] flex items-center gap-0.5">
-                            <Wrench className="h-2.5 w-2.5" /> Practical
+                        <span className="text-[10px] text-[#444] flex items-center gap-0.5">
+                          <BookOpen className="h-2.5 w-2.5" />
+                          {section.labs.length} lab{section.labs.length !== 1 ? "s" : ""}
+                        </span>
+                        {sectionXp > 0 && (
+                          <span className="text-[10px] font-mono" style={{ color: "var(--accent-primary)" }}>
+                            +{sectionXp} XP
                           </span>
                         )}
-                        <span className="text-[10px] font-mono" style={{ color: "var(--accent-primary)" }}>
-                          +{section.xp} XP
-                        </span>
                       </div>
                     </div>
                   </button>
@@ -193,25 +185,13 @@ export default function ModuleDetailPage() {
               {/* Section header */}
               <div className="flex items-start justify-between gap-4 mb-8">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    {activeSection.type === "reading" ? (
-                      <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#555]">
-                        <BookOpen className="h-3.5 w-3.5" /> Reading
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#555]">
-                        <Wrench className="h-3.5 w-3.5" /> Practical Task
-                      </span>
-                    )}
-                    <span className="text-[#333]">·</span>
-                    <span className="text-xs font-mono font-bold" style={{ color: "var(--accent-primary)" }}>
-                      +{activeSection.xp} XP
-                    </span>
-                  </div>
                   <h2 className="text-2xl font-black">{activeSection.title}</h2>
+                  <p className="text-xs text-[#555] mt-1">
+                    {activeSection.labs.length} lab{activeSection.labs.length !== 1 ? "s" : ""} ·{" "}
+                    {activeSection.labs.reduce((sum, l) => sum + l.xp, 0)} XP total
+                  </p>
                 </div>
-
-                {activeSection.completed && (
+                {isSectionComplete(activeSection) && (
                   <div
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0"
                     style={{ color: "var(--accent-primary)", backgroundColor: "rgba(var(--accent-primary-rgb),0.1)" }}
@@ -243,74 +223,14 @@ export default function ModuleDetailPage() {
                 </div>
               )}
 
-              {/* Action block */}
-              {activeSection.type === "reading" && (
-                <div
-                  className="rounded-2xl border p-6"
-                  style={{ backgroundColor: "#0d0d0d", borderColor: "#2a2a2a" }}
-                >
-                  {!user ? (
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="text-sm text-[#666]">Sign in to mark this section complete and earn XP.</p>
-                      <Link
-                        href="/login"
-                        className="px-4 py-2 rounded-xl text-sm font-bold text-black shrink-0"
-                        style={{ backgroundColor: "var(--accent-primary)" }}
-                      >
-                        Sign in
-                      </Link>
-                    </div>
-                  ) : activeSection.completed ? (
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "var(--accent-primary)" }} />
-                      <div>
-                        <p className="font-bold text-white text-sm">Section complete!</p>
-                        <p className="text-xs text-[#555] mt-0.5">You earned {activeSection.xp} XP for this section.</p>
-                      </div>
-                      {/* Next section button */}
-                      {module.sections.find((s) => s.order === activeSection.order + 1) && (
-                        <button
-                          onClick={() => {
-                            const next = module.sections.find((s) => s.order === activeSection.order + 1);
-                            if (next) setActiveSection(next);
-                          }}
-                          className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-black"
-                          style={{ backgroundColor: "var(--accent-primary)" }}
-                        >
-                          Next <ChevronRight className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="font-bold text-white text-sm">Done reading?</p>
-                        <p className="text-xs text-[#555] mt-0.5">Mark complete to earn {activeSection.xp} XP and unlock the next section.</p>
-                      </div>
-                      <button
-                        onClick={handleCompleteReading}
-                        disabled={completing}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-black shrink-0 disabled:opacity-50 transition-all hover:scale-105"
-                        style={{ backgroundColor: "var(--accent-primary)" }}
-                      >
-                        {completing ? "Saving..." : "Mark Complete"}
-                        <CheckCircle2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Practical task block */}
-              {activeSection.type === "practical" && (
-                <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] overflow-hidden">
-                  <div className="px-6 py-4 border-b border-[#1a1a1a] bg-[#111] flex items-center justify-between">
-                    <h3 className="font-bold text-sm uppercase tracking-widest text-[#888]">
-                      Practical Task
-                    </h3>
+              {/* Labs */}
+              {activeSection.labs.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-sm uppercase tracking-widest text-[#888]">Labs</h3>
                     {user && (
                       <button
-                        onClick={handleRefreshPractical}
+                        onClick={handleRefresh}
                         disabled={refreshing}
                         className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#2a2a2a] text-[#666] hover:text-white hover:border-[#444] transition-all disabled:opacity-50"
                       >
@@ -320,52 +240,9 @@ export default function ModuleDetailPage() {
                     )}
                   </div>
 
-                  <div className="px-6 py-5">
-                    {!user ? (
-                      <div className="flex items-center justify-between gap-4">
-                        <p className="text-sm text-[#666]">Sign in to track your progress on this task.</p>
-                        <Link href="/login" className="px-4 py-2 rounded-xl text-sm font-bold text-black shrink-0" style={{ backgroundColor: "var(--accent-primary)" }}>
-                          Sign in
-                        </Link>
-                      </div>
-                    ) : activeSection.completed ? (
-                      <div className="flex items-center gap-4">
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.15)" }}
-                        >
-                          <CheckCircle2 className="h-6 w-6" style={{ color: "var(--accent-primary)" }} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-white">Task completed!</p>
-                          <p className="text-sm text-[#666] mt-0.5">
-                            You earned <span className="font-mono font-bold" style={{ color: "var(--accent-primary)" }}>{activeSection.xp} XP</span> for this task.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center shrink-0">
-                            <Terminal className="h-5 w-5 text-[#444]" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-white">Run the task in your terminal</p>
-                            <p className="text-sm text-[#666] mt-0.5">
-                              Use the OrbStack agent to complete this task, then hit Refresh Progress.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="rounded-xl border border-[#2a2a2a] bg-black/40 px-5 py-4 font-mono text-sm space-y-2">
-                          <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack sync</span></p>
-                          <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack start {module.id}</span></p>
-                          <p className="text-[#555]"># Complete the steps shown in your terminal</p>
-                          <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">orbstack check</span></p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {activeSection.labs.map((lab) => (
+                    <LabBlock key={lab.id} lab={lab} moduleId={id} user={user} />
+                  ))}
                 </div>
               )}
 
@@ -414,6 +291,89 @@ export default function ModuleDetailPage() {
             </div>
           )}
         </main>
+      </div>
+    </div>
+  );
+}
+
+// ── Lab block component ────────────────────────────────────────────────────
+
+function LabBlock({ lab, moduleId, user }: { lab: Lab; moduleId: string; user: unknown | null }) {
+  return (
+    <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] overflow-hidden">
+      <div className="px-6 py-4 border-b border-[#1a1a1a] bg-[#111] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {lab.completed ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "var(--accent-primary)" }} />
+          ) : (
+            <Circle className="h-4 w-4 text-[#444] shrink-0" />
+          )}
+          <div>
+            <p className="font-bold text-sm text-white">{lab.title}</p>
+            <p className="text-[10px] font-mono text-[#555] mt-0.5">{lab.id}</p>
+          </div>
+        </div>
+        <span className="font-mono text-xs font-bold shrink-0" style={{ color: "var(--accent-primary)" }}>
+          +{lab.xp} XP
+        </span>
+      </div>
+
+      <div className="px-6 py-5">
+        {!user ? (
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-[#666]">Sign in to track your progress on this lab.</p>
+            <Link
+              href="/login"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-black shrink-0"
+              style={{ backgroundColor: "var(--accent-primary)" }}
+            >
+              Sign in
+            </Link>
+          </div>
+        ) : lab.completed ? (
+          <div className="flex items-center gap-4">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.15)" }}
+            >
+              <CheckCircle2 className="h-5 w-5" style={{ color: "var(--accent-primary)" }} />
+            </div>
+            <div>
+              <p className="font-bold text-white text-sm">Lab completed!</p>
+              <p className="text-xs text-[#666] mt-0.5">
+                You earned{" "}
+                <span className="font-mono font-bold" style={{ color: "var(--accent-primary)" }}>
+                  {lab.xp} XP
+                </span>{" "}
+                for this lab.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center shrink-0">
+                <Terminal className="h-5 w-5 text-[#444]" />
+              </div>
+              <div>
+                <p className="font-bold text-white">Complete this lab in your terminal</p>
+                <p className="text-sm text-[#666] mt-0.5">
+                  Use the <code className="text-xs bg-[#111] px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--accent-primary)" }}>tld</code> agent to start and validate this lab.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#2a2a2a] bg-black/40 px-5 py-4 font-mono text-sm space-y-2">
+              <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">tld start {lab.id}</span></p>
+              <p className="text-[#555]"># Complete the task shown in your terminal</p>
+              <p><span style={{ color: "var(--accent-primary)" }}>❯</span> <span className="text-white">tld check</span></p>
+            </div>
+
+            {lab.estimated_minutes && (
+              <p className="text-xs text-[#555]">Estimated time: ~{lab.estimated_minutes} minutes</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

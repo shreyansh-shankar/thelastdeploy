@@ -1,4 +1,4 @@
-// agent/internal/cache/challenge.go
+// internal/cache/challenge.go
 package cache
 
 import (
@@ -11,40 +11,41 @@ import (
 	"strings"
 )
 
-// Module mirrors the module metadata the agent works with.
 type Module struct {
-	ID                 string
-	Title              string
-	Description        string
-	Topic              string
-	Difficulty         string
-	EstimatedMinutes   int
-	ResourceLimitsCPU  int
-	ResourceLimitsMem  int
-	SetupType          string
-	SeedCommands       []string
-	PracticalSectionID string
-	PracticalSectionXP int
-	ValidatorScript    string
-	Sections           []SectionRef
+	ID               string
+	Title            string
+	Description      string
+	Topic            string
+	Difficulty       string
+	EstimatedMinutes int
+	Sections         []SectionRef
 }
 
-// SectionRef is a lightweight entry from the module sections list.
 type SectionRef struct {
 	ID    string
 	Order int
 }
 
-// Section mirrors a section.yaml file.
 type Section struct {
 	ID    string
 	Title string
-	Type  string // "reading" | "practical"
 	Order int
-	XP    int
 }
 
-// moduleJSONFile is the shape saved by sync when the backend returns JSON.
+type Lab struct {
+	ID            string
+	Title         string
+	SectionID     string
+	ModuleID      string
+	SetupType     string
+	SeedCommands  []string
+	XP            int
+	EstimatedMins int
+	ResourcesCPU  int
+	ResourcesMem  int
+	ValidatorPath string
+}
+
 type moduleJSONFile struct {
 	ID               string   `json:"id"`
 	Title            string   `json:"title"`
@@ -55,66 +56,196 @@ type moduleJSONFile struct {
 	Tags             []string `json:"tags"`
 	TotalXP          int      `json:"total_xp"`
 	TotalSections    int      `json:"total_sections"`
-	// Setup fields — present when synced from local YAML fallback via JSON.
-	SetupType    string   `json:"setup_type,omitempty"`
-	SeedCommands []string `json:"seed_commands,omitempty"`
-	// Resource limits
-	ResourceLimitsCPU int `json:"resource_limits_cpu,omitempty"`
-	ResourceLimitsMem int `json:"resource_limits_mem,omitempty"`
 }
 
-// LoadModule reads a module from the cache dir and discovers its practical
-// section by scanning the sections/ subdirectory.
-//
-// It tries module.json first (written by sync from the API), then falls back
-// to module.yaml (written by syncFromLocal).
+type labJSONFile struct {
+	ID            string   `json:"id"`
+	Title         string   `json:"title"`
+	SetupType     string   `json:"setup_type"`
+	SeedCommands  []string `json:"seed_commands"`
+	XP            int      `json:"xp"`
+	EstimatedMins int      `json:"estimated_minutes"`
+	ResourcesCPU  int      `json:"resource_limits_cpu"`
+	ResourcesMem  int      `json:"resource_limits_mem"`
+}
+
 func LoadModule(baseDir, moduleID string) (*Module, error) {
 	moduleDir := filepath.Join(baseDir, moduleID)
-
-	var m *Module
-	var err error
-
 	jsonPath := filepath.Join(moduleDir, "module.json")
 	yamlPath := filepath.Join(moduleDir, "module.yaml")
+	if _, err := os.Stat(jsonPath); err == nil {
+		return parseModuleJSON(jsonPath)
+	}
+	return ParseModuleYAML(yamlPath)
+}
 
-	if _, statErr := os.Stat(jsonPath); statErr == nil {
-		m, err = parseModuleJSON(jsonPath)
-	} else {
-		m, err = ParseModuleYAML(yamlPath)
+func ListModules(baseDir string) ([]string, error) {
+	entries, err := os.ReadDir(baseDir)
+	if os.IsNotExist(err) {
+		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-
-	// Walk sections/ to find the practical section and its validator.
-	sectionsDir := filepath.Join(moduleDir, "sections")
-	entries, err := os.ReadDir(sectionsDir)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("read sections dir: %w", err)
+	var ids []string
+	for _, e := range entries {
+		if e.IsDir() {
+			ids = append(ids, e.Name())
+		}
 	}
+	return ids, nil
+}
 
+func FindLab(baseDir, labID string) (*Lab, error) {
+	modules, err := ListModules(baseDir)
+	if err != nil {
+		return nil, err
+	}
+	for _, modID := range modules {
+		sectionsDir := filepath.Join(baseDir, modID, "sections")
+		sections, err := os.ReadDir(sectionsDir)
+		if err != nil {
+			continue
+		}
+		for _, sec := range sections {
+			if !sec.IsDir() {
+				continue
+			}
+			labsDir := filepath.Join(sectionsDir, sec.Name(), "labs")
+			labs, err := os.ReadDir(labsDir)
+			if err != nil {
+				continue
+			}
+			for _, l := range labs {
+				if !l.IsDir() {
+					continue
+				}
+				if l.Name() == labID {
+					return loadLab(baseDir, modID, sec.Name(), labID)
+				}
+			}
+		}
+	}
+	return nil, fmt.Errorf("lab '%s' not found — run 'tld sync' first", labID)
+}
+
+func LoadLabsForModule(baseDir, moduleID string) ([]*Lab, error) {
+	sectionsDir := filepath.Join(baseDir, moduleID, "sections")
+	sections, err := os.ReadDir(sectionsDir)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var labs []*Lab
+	for _, sec := range sections {
+		if !sec.IsDir() {
+			continue
+		}
+		ls, err := LoadLabsForSection(baseDir, moduleID, sec.Name())
+		if err != nil {
+			continue
+		}
+		labs = append(labs, ls...)
+	}
+	return labs, nil
+}
+
+func LoadLabsForSection(baseDir, moduleID, sectionID string) ([]*Lab, error) {
+	labsDir := filepath.Join(baseDir, moduleID, "sections", sectionID, "labs")
+	entries, err := os.ReadDir(labsDir)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var labs []*Lab
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
 		}
-		sectionYAML := filepath.Join(sectionsDir, e.Name(), "section.yaml")
-		sec, err := ParseSectionYAML(sectionYAML)
+		lab, err := loadLab(baseDir, moduleID, sectionID, e.Name())
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "warn: skipping section %s: %v\n", e.Name(), err)
+			fmt.Fprintf(os.Stderr, "warn: skipping lab %s: %v\n", e.Name(), err)
 			continue
 		}
-		if sec.Type == "practical" {
-			m.PracticalSectionID = sec.ID
-			m.PracticalSectionXP = sec.XP
-			m.ValidatorScript = filepath.Join(sectionsDir, e.Name(), "validator.sh")
-			break
-		}
+		labs = append(labs, lab)
 	}
-
-	return m, nil
+	return labs, nil
 }
 
-// parseModuleJSON reads a module.json file saved by sync.
+func CountAll(baseDir string) (int, int) {
+	modules, _ := ListModules(baseDir)
+	totalLabs := 0
+	for _, modID := range modules {
+		labs, _ := LoadLabsForModule(baseDir, modID)
+		totalLabs += len(labs)
+	}
+	return len(modules), totalLabs
+}
+
+func loadLab(baseDir, moduleID, sectionID, labID string) (*Lab, error) {
+	labDir := filepath.Join(baseDir, moduleID, "sections", sectionID, "labs", labID)
+	jsonPath := filepath.Join(labDir, "lab.json")
+	yamlPath := filepath.Join(labDir, "lab.yaml")
+
+	var lab *Lab
+	if _, err := os.Stat(jsonPath); err == nil {
+		l, err := parseLabJSON(jsonPath)
+		if err != nil {
+			return nil, err
+		}
+		lab = l
+	} else {
+		l, err := parseLabYAML(yamlPath)
+		if err != nil {
+			return nil, err
+		}
+		lab = l
+	}
+
+	lab.ID = labID
+	lab.SectionID = sectionID
+	lab.ModuleID = moduleID
+	if lab.SetupType == "" {
+		lab.SetupType = "shell"
+	}
+	if lab.ResourcesCPU == 0 {
+		lab.ResourcesCPU = 1
+	}
+	if lab.ResourcesMem == 0 {
+		lab.ResourcesMem = 512
+	}
+	lab.ValidatorPath = filepath.Join(labDir, "validator.sh")
+	return lab, nil
+}
+
+func SaveModuleJSON(baseDir, id string, data []byte) error {
+	moduleDir := filepath.Join(baseDir, id)
+	if err := os.MkdirAll(moduleDir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(moduleDir, "module.json"), data, 0644)
+}
+
+func SaveRaw(baseDir, id string, data []byte) error {
+	moduleDir := filepath.Join(baseDir, id)
+	if err := os.MkdirAll(moduleDir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(moduleDir, "module.yaml"), data, 0644)
+}
+
+func SaveLabJSON(baseDir, moduleID, sectionID, labID string, data []byte) error {
+	labDir := filepath.Join(baseDir, moduleID, "sections", sectionID, "labs", labID)
+	if err := os.MkdirAll(labDir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(labDir, "lab.json"), data, 0644)
+}
+
 func parseModuleJSON(path string) (*Module, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -127,76 +258,44 @@ func parseModuleJSON(path string) (*Module, error) {
 	if jf.ID == "" {
 		return nil, fmt.Errorf("module.json missing required field: id")
 	}
-
-	cpu := jf.ResourceLimitsCPU
-	mem := jf.ResourceLimitsMem
-	if cpu == 0 {
-		cpu = 1
-	}
-	if mem == 0 {
-		mem = 512
-	}
-	setupType := jf.SetupType
-	if setupType == "" {
-		setupType = "shell"
-	}
-
 	return &Module{
-		ID:                jf.ID,
-		Title:             jf.Title,
-		Description:       jf.Description,
-		Topic:             jf.Topic,
-		Difficulty:        jf.Difficulty,
-		EstimatedMinutes:  jf.EstimatedMinutes,
-		ResourceLimitsCPU: cpu,
-		ResourceLimitsMem: mem,
-		SetupType:         setupType,
-		SeedCommands:      jf.SeedCommands,
+		ID:               jf.ID,
+		Title:            jf.Title,
+		Description:      jf.Description,
+		Topic:            jf.Topic,
+		Difficulty:       jf.Difficulty,
+		EstimatedMinutes: jf.EstimatedMinutes,
 	}, nil
 }
 
-// SaveModuleJSON writes structured module JSON to baseDir/<id>/module.json
-func SaveModuleJSON(baseDir, id string, data []byte) error {
-	moduleDir := filepath.Join(baseDir, id)
-	if err := os.MkdirAll(moduleDir, 0755); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(moduleDir, "module.json"), data, 0644)
-}
-
-// SaveRaw writes raw YAML bytes for a module into baseDir/<id>/module.yaml
-// Used by syncFromLocal when falling back to local files.
-func SaveRaw(baseDir, id string, data []byte) error {
-	moduleDir := filepath.Join(baseDir, id)
-	if err := os.MkdirAll(moduleDir, 0755); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(moduleDir, "module.yaml"), data, 0644)
-}
-
-// ---------------------------------------------------------------------------
-// YAML parsers
-// ---------------------------------------------------------------------------
-
-// ParseModuleYAML parses a module.yaml file from disk.
-func ParseModuleYAML(path string) (*Module, error) {
-	f, err := os.Open(path)
+func parseLabJSON(path string) (*Lab, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", path, err)
-	}
-	defer f.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
+	var jf labJSONFile
+	if err := json.Unmarshal(data, &jf); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+	return &Lab{
+		ID:            jf.ID,
+		Title:         jf.Title,
+		SetupType:     jf.SetupType,
+		SeedCommands:  jf.SeedCommands,
+		XP:            jf.XP,
+		EstimatedMins: jf.EstimatedMins,
+		ResourcesCPU:  jf.ResourcesCPU,
+		ResourcesMem:  jf.ResourcesMem,
+	}, nil
+}
 
+func ParseModuleYAML(path string) (*Module, error) {
+	lines, err := readLines(path)
+	if err != nil {
+		return nil, err
+	}
 	m := &Module{}
-	var inResourceLimits, inSetup, inSeedCommands, inSections bool
+	var inSections bool
 	var currentSection *SectionRef
 
 	for _, raw := range lines {
@@ -204,22 +303,15 @@ func ParseModuleYAML(path string) (*Module, error) {
 		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
 			continue
 		}
-
 		indent := countIndent(raw)
-
 		if indent == 0 {
-			inResourceLimits = false
-			inSetup = false
-			inSeedCommands = false
 			inSections = false
 			if currentSection != nil {
 				m.Sections = append(m.Sections, *currentSection)
 				currentSection = nil
 			}
 		}
-
 		key, val := splitKV(trimmed)
-
 		switch {
 		case indent == 0 && key == "id":
 			m.ID = val
@@ -233,23 +325,6 @@ func ParseModuleYAML(path string) (*Module, error) {
 			m.Difficulty = val
 		case indent == 0 && key == "estimated_minutes":
 			m.EstimatedMinutes, _ = strconv.Atoi(val)
-
-		case indent == 0 && key == "resource_limits":
-			inResourceLimits = true
-		case inResourceLimits && indent == 2 && key == "cpu":
-			m.ResourceLimitsCPU, _ = strconv.Atoi(val)
-		case inResourceLimits && indent == 2 && key == "memory_mb":
-			m.ResourceLimitsMem, _ = strconv.Atoi(val)
-
-		case indent == 0 && key == "setup":
-			inSetup = true
-		case inSetup && indent == 2 && key == "type":
-			m.SetupType = val
-		case inSetup && indent == 2 && key == "seed_commands":
-			inSeedCommands = true
-		case inSeedCommands && indent == 4 && strings.HasPrefix(trimmed, "- "):
-			m.SeedCommands = append(m.SeedCommands, unquote(strings.TrimPrefix(trimmed, "- ")))
-
 		case indent == 0 && key == "sections":
 			inSections = true
 		case inSections && indent == 2 && strings.HasPrefix(trimmed, "- "):
@@ -265,34 +340,68 @@ func ParseModuleYAML(path string) (*Module, error) {
 			setSectionRefField(currentSection, k2, v2)
 		}
 	}
-
 	if currentSection != nil {
 		m.Sections = append(m.Sections, *currentSection)
 	}
-
 	if m.ID == "" {
 		return nil, fmt.Errorf("module.yaml missing required field: id")
 	}
 	return m, nil
 }
 
-// ParseSectionYAML parses a section.yaml file from disk.
-func ParseSectionYAML(path string) (*Section, error) {
-	f, err := os.Open(path)
+func parseLabYAML(path string) (*Lab, error) {
+	lines, err := readLines(path)
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", path, err)
+		return nil, err
 	}
-	defer f.Close()
+	lab := &Lab{}
+	var inSetup, inSeedCmds bool
 
-	var lines []string
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+	for _, raw := range lines {
+		trimmed := strings.TrimSpace(raw)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		indent := countIndent(raw)
+		if indent == 0 {
+			inSetup = false
+			inSeedCmds = false
+		}
+		key, val := splitKV(trimmed)
+		switch {
+		case indent == 0 && key == "id":
+			lab.ID = val
+		case indent == 0 && key == "title":
+			lab.Title = unquote(val)
+		case indent == 0 && key == "xp":
+			lab.XP, _ = strconv.Atoi(val)
+		case indent == 0 && key == "estimated_minutes":
+			lab.EstimatedMins, _ = strconv.Atoi(val)
+		case indent == 0 && key == "setup":
+			inSetup = true
+		case inSetup && indent == 2 && key == "type":
+			lab.SetupType = val
+		case inSetup && indent == 2 && key == "resource_limits_cpu":
+			lab.ResourcesCPU, _ = strconv.Atoi(val)
+		case inSetup && indent == 2 && key == "resource_limits_mem":
+			lab.ResourcesMem, _ = strconv.Atoi(val)
+		case inSetup && indent == 2 && key == "seed_commands":
+			inSeedCmds = true
+		case inSeedCmds && indent == 4 && strings.HasPrefix(trimmed, "- "):
+			lab.SeedCommands = append(lab.SeedCommands, unquote(strings.TrimPrefix(trimmed, "- ")))
+		}
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("read %s: %w", path, err)
+	if lab.ID == "" {
+		return nil, fmt.Errorf("lab.yaml missing required field: id")
 	}
+	return lab, nil
+}
 
+func ParseSectionYAML(path string) (*Section, error) {
+	lines, err := readLines(path)
+	if err != nil {
+		return nil, err
+	}
 	s := &Section{}
 	for _, raw := range lines {
 		trimmed := strings.TrimSpace(raw)
@@ -308,24 +417,29 @@ func ParseSectionYAML(path string) (*Section, error) {
 			s.ID = val
 		case "title":
 			s.Title = unquote(val)
-		case "type":
-			s.Type = val
 		case "order":
 			s.Order, _ = strconv.Atoi(val)
-		case "xp":
-			s.XP, _ = strconv.Atoi(val)
 		}
 	}
-
 	if s.ID == "" {
 		return nil, fmt.Errorf("section.yaml missing required field: id")
 	}
 	return s, nil
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
+func readLines(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %w", path, err)
+	}
+	defer f.Close()
+	var lines []string
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		lines = append(lines, sc.Text())
+	}
+	return lines, sc.Err()
+}
 
 func setSectionRefField(s *SectionRef, key, val string) {
 	switch key {
@@ -353,9 +467,7 @@ func splitKV(s string) (string, string) {
 	if idx == -1 {
 		return s, ""
 	}
-	key := strings.TrimSpace(s[:idx])
-	val := strings.TrimSpace(s[idx+1:])
-	return key, val
+	return strings.TrimSpace(s[:idx]), strings.TrimSpace(s[idx+1:])
 }
 
 func unquote(s string) string {

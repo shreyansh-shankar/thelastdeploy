@@ -1,4 +1,4 @@
-// agent/cmd/login.go
+// cmd/login.go
 package cmd
 
 import (
@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/orbstack/agent/internal/config"
+	"github.com/thelastdeploy/agent/internal/config"
 	"golang.org/x/term"
 )
 
@@ -24,9 +24,8 @@ func runLogin(args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	// ── Collect credentials ──────────────────────────────────────────────────
+	// ── Collect credentials ──────────────────────────────────────────────
 	reader := bufio.NewReader(os.Stdin)
-
 	fmt.Print("Email: ")
 	email, err := reader.ReadString('\n')
 	if err != nil {
@@ -38,13 +37,10 @@ func runLogin(args []string) error {
 	}
 
 	fmt.Print("Password: ")
-	// term.ReadPassword turns off echo so the password is not shown.
-	// Falls back to plain stdin read if we're not attached to a real terminal
-	// (e.g. piped input in tests).
 	var password string
 	if term.IsTerminal(int(syscall.Stdin)) {
 		pwBytes, err := term.ReadPassword(int(syscall.Stdin))
-		fmt.Println() // newline after the hidden input
+		fmt.Println()
 		if err != nil {
 			return fmt.Errorf("read password: %w", err)
 		}
@@ -60,7 +56,7 @@ func runLogin(args []string) error {
 		return errors.New("password cannot be empty")
 	}
 
-	// ── POST /login ──────────────────────────────────────────────────────────
+	// ── POST /login ──────────────────────────────────────────────────────
 	payload, _ := json.Marshal(map[string]string{
 		"email":    email,
 		"password": password,
@@ -79,7 +75,6 @@ func runLogin(args []string) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		// Try to extract a meaningful error message from the response body.
 		var errBody map[string]interface{}
 		if json.Unmarshal(body, &errBody) == nil {
 			if detail, ok := errBody["detail"]; ok {
@@ -89,9 +84,14 @@ func runLogin(args []string) error {
 		return fmt.Errorf("login failed (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
+	// ── Parse response ───────────────────────────────────────────────────
+	// Backend returns access_token AND device_key.
+	// device_key is a per-user secret the agent uses to sign validator results.
+	// Backend stores the same key and uses it to verify signatures.
 	var loginResp struct {
 		AccessToken string `json:"access_token"`
 		TokenType   string `json:"token_type"`
+		DeviceKey   string `json:"device_key"` // backend-issued, per-user signing key
 	}
 	if err := json.Unmarshal(body, &loginResp); err != nil {
 		return fmt.Errorf("unexpected response format: %w", err)
@@ -100,10 +100,19 @@ func runLogin(args []string) error {
 		return errors.New("server returned an empty token — please try again")
 	}
 
-	// ── Persist token ────────────────────────────────────────────────────────
+	// ── Persist token and device key ─────────────────────────────────────
 	cfg.AuthToken = loginResp.AccessToken
 	if err := config.Save(cfg); err != nil {
 		return fmt.Errorf("save config: %w", err)
+	}
+
+	// If backend issued a device key, write it to ~/.tld/device.key
+	// This replaces any locally generated key so backend can verify signatures.
+	if loginResp.DeviceKey != "" {
+		if err := os.WriteFile(cfg.DeviceKeyPath, []byte(loginResp.DeviceKey), 0600); err != nil {
+			return fmt.Errorf("save device key: %w", err)
+		}
+		fmt.Printf("  Device key saved: %s\n", cfg.DeviceKeyPath)
 	}
 
 	fmt.Printf("✓ Logged in as %s\n", email)

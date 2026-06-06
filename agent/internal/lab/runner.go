@@ -1,62 +1,58 @@
-// agent/internal/lab/runner.go
+// internal/lab/runner.go
 package lab
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/orbstack/agent/internal/cache"
+	"github.com/thelastdeploy/agent/internal/cache"
 )
 
-// Start sets up the lab environment for a module's practical section.
-// It dispatches on module.SetupType: "shell", "docker", or "kind".
-func Start(m *cache.Module, challengesDir string) error {
+// Start sets up the lab environment. Non-blocking — returns immediately
+// after writing session.json so the terminal stays free.
+func Start(lab *cache.Lab) error {
 	if SessionExists() {
 		existing, _ := ReadSession()
 		if existing != nil {
-			return fmt.Errorf("lab '%s' is already running — run 'orbstack stop' first", existing.ModuleID)
+			return fmt.Errorf("lab '%s' is already running — run 'tld stop' first", existing.LabID)
 		}
 	}
 
 	fmt.Printf("\n╔══════════════════════════════════════════════╗\n")
-	fmt.Printf("║  OrbStack — Starting: %-24s║\n", truncate(m.Title, 24))
+	fmt.Printf("║  The Last Deploy — Starting: %-16s║\n", truncate(lab.Title, 16))
 	fmt.Printf("╚══════════════════════════════════════════════╝\n\n")
 
 	session := &Session{
-		ModuleID:      m.ID,
-		SectionID:     m.PracticalSectionID,
+		LabID:         lab.ID,
+		ModuleID:      lab.ModuleID,
+		SectionID:     lab.SectionID,
 		StartedAt:     time.Now(),
-		ValidatorPath: m.ValidatorScript,
-		SetupType:     m.SetupType,
+		ValidatorPath: lab.ValidatorPath,
+		SetupType:     lab.SetupType,
 	}
 
-	switch m.SetupType {
+	switch lab.SetupType {
 	case "shell", "":
-		if err := runShellSetup(m); err != nil {
+		if err := runShellSetup(lab); err != nil {
 			return err
 		}
-
 	case "docker":
-		containerID, err := StartDocker(m)
+		containerID, err := StartDocker(lab)
 		if err != nil {
 			return err
 		}
 		session.ContainerID = containerID
-
 	case "kind":
-		if err := StartKind(m); err != nil {
+		if err := StartKind(lab); err != nil {
 			return err
 		}
-
 	default:
-		return fmt.Errorf("unknown setup type: %q (must be shell, docker, or kind)", m.SetupType)
+		return fmt.Errorf("unknown setup type: %q (must be shell, docker, or kind)", lab.SetupType)
 	}
 
-	// Ensure validator script is executable.
 	if _, err := os.Stat(session.ValidatorPath); err == nil {
 		os.Chmod(session.ValidatorPath, 0755)
 	}
@@ -65,18 +61,18 @@ func Start(m *cache.Module, challengesDir string) error {
 		return fmt.Errorf("write session: %w", err)
 	}
 
-	printModule(m)
+	printLab(lab)
 	return nil
 }
 
-// Stop tears down whatever Start created.
+// Stop tears down the lab environment and clears the session.
 func Stop() error {
 	session, err := ReadSession()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Stopping lab: %s / %s\n", session.ModuleID, session.SectionID)
+	fmt.Printf("Stopping lab: %s\n", session.LabID)
 	elapsed := time.Since(session.StartedAt).Round(time.Second)
 	fmt.Printf("Session duration: %s\n\n", elapsed)
 
@@ -86,7 +82,7 @@ func Stop() error {
 			fmt.Fprintf(os.Stderr, "warn: %v\n", err)
 		}
 	case "kind":
-		if err := StopKind(session.ModuleID); err != nil {
+		if err := StopKind(session.LabID); err != nil {
 			fmt.Fprintf(os.Stderr, "warn: %v\n", err)
 		}
 	}
@@ -96,17 +92,16 @@ func Stop() error {
 	}
 
 	fmt.Println("✓ Lab stopped. Environment cleaned up.")
-	fmt.Println("  Run 'orbstack sync' to see available modules.")
+	fmt.Println("  Run 'tld sync --all' to see available labs.")
 	return nil
 }
 
-// runShellSetup runs seed_commands for shell-type modules directly on the host.
-func runShellSetup(m *cache.Module) error {
-	if len(m.SeedCommands) == 0 {
+func runShellSetup(lab *cache.Lab) error {
+	if len(lab.SeedCommands) == 0 {
 		return nil
 	}
 	fmt.Println("⚙  Running setup commands...")
-	for _, command := range m.SeedCommands {
+	for _, command := range lab.SeedCommands {
 		if err := runShellCommand(command); err != nil {
 			return fmt.Errorf("seed command failed [%s]: %w", command, err)
 		}
@@ -132,16 +127,17 @@ func runShellCommand(command string) error {
 	return cmd.Run()
 }
 
-func printModule(m *cache.Module) {
-	fmt.Printf("📋 Module:  %s\n", m.Title)
-	fmt.Printf("   Topic:      %s\n", m.Topic)
-	fmt.Printf("   Difficulty: %s\n", m.Difficulty)
-	fmt.Printf("   XP reward:  %d\n", m.PracticalSectionXP)
-	fmt.Printf("   Est. time:  ~%d minutes\n\n", m.EstimatedMinutes)
-	fmt.Printf("   Practical section: %s\n\n", m.PracticalSectionID)
+func printLab(lab *cache.Lab) {
+	fmt.Printf("📋 Lab:      %s\n", lab.Title)
+	fmt.Printf("   ID:          %s\n", lab.ID)
+	fmt.Printf("   Module:      %s\n", lab.ModuleID)
+	fmt.Printf("   Section:     %s\n", lab.SectionID)
+	fmt.Printf("   Type:        %s\n", lab.SetupType)
+	fmt.Printf("   XP reward:   %d\n", lab.XP)
+	fmt.Printf("   Est. time:   ~%d minutes\n\n", lab.EstimatedMins)
 	fmt.Printf("──────────────────────────────────────────────\n")
-	fmt.Printf("When you're done, run:  orbstack check\n")
-	fmt.Printf("To quit:                Ctrl+C  (or orbstack stop)\n")
+	fmt.Printf("When you're done, run:  tld check\n")
+	fmt.Printf("To stop the lab:        tld stop\n")
 	fmt.Printf("──────────────────────────────────────────────\n\n")
 }
 
@@ -151,8 +147,3 @@ func truncate(s string, max int) string {
 	}
 	return s[:max-1] + "…"
 }
-
-// Ensure unused import doesn't break compile — filepath is used in Start
-// via the session ValidatorPath which is already an absolute path from
-// cache.LoadModule, so we only need it if we join paths here.
-var _ = filepath.Join

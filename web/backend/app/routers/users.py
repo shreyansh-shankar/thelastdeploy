@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.dependencies import get_db, get_current_user
-from app.models import User, SectionProgress
+from app.models import User, LabProgress
 from app.schemas import MeResponse, LeaderboardEntry, LeaderboardResponse
 
 router = APIRouter()
@@ -16,12 +16,12 @@ async def get_me(
     current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(SectionProgress.section_id).where(
-            SectionProgress.user_id == current_user.id,
-            SectionProgress.completed == True,
+        select(LabProgress.lab_id).where(
+            LabProgress.user_id == current_user.id,
+            LabProgress.completed == True,
         )
     )
-    completed = [row[0] for row in result.fetchall()]
+    completed_labs = [row[0] for row in result.fetchall()]
 
     return MeResponse(
         id=current_user.id,
@@ -29,7 +29,7 @@ async def get_me(
         email=current_user.email,
         xp=current_user.xp,
         streak_days=current_user.streak_days,
-        completed_sections=completed,
+        completed_labs=completed_labs,
     )
 
 
@@ -40,11 +40,11 @@ async def get_leaderboard(db: AsyncSession = Depends(get_db)):
             User.id,
             User.username,
             User.xp,
-            func.count(SectionProgress.id).label("completed"),
+            func.count(LabProgress.id).label("completed"),
         )
         .outerjoin(
-            SectionProgress,
-            (SectionProgress.user_id == User.id) & (SectionProgress.completed == True)
+            LabProgress,
+            (LabProgress.user_id == User.id) & (LabProgress.completed == True)
         )
         .group_by(User.id, User.username, User.xp)
         .order_by(User.xp.desc())

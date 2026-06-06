@@ -1,0 +1,9 @@
+id: dkr-run-hello
+title: "Run hello-world container"
+xp: 50
+estimated_minutes: 10
+setup:
+  type: shell
+  seed_commands: []
+  resource_limits_cpu: 1
+  resource_limits_mem: 512

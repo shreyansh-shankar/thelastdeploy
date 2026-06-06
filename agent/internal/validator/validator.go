@@ -1,4 +1,4 @@
-// agent/internal/validator/validator.go
+// internal/validator/validator.go
 package validator
 
 import (
@@ -13,28 +13,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/orbstack/agent/internal/device"
+	"github.com/thelastdeploy/agent/internal/device"
 )
 
 // Result holds the outcome of a validation run.
 type Result struct {
-	ModuleID  string    `json:"module_id"`
+	LabID     string    `json:"lab_id"`
 	SectionID string    `json:"section_id"`
 	Passed    bool      `json:"passed"`
 	Output    string    `json:"output"`
 	RanAt     time.Time `json:"ran_at"`
-	Signature string    `json:"signature"` // HMAC-SHA256 of payload
+	Signature string    `json:"signature"`
 }
 
 // Run executes the validator script and returns a signed Result.
-// moduleID and sectionID are included in the HMAC payload so the backend can
-// verify that the signature covers the specific section that was validated.
-func Run(moduleID, sectionID, scriptPath, deviceKeyPath string) (*Result, error) {
+// labID and sectionID are included in the HMAC payload so the backend can
+// verify the signature covers the specific lab that was validated.
+func Run(labID, sectionID, scriptPath, deviceKeyPath string) (*Result, error) {
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("validator script not found: %s", scriptPath)
 	}
 
-	// Ensure executable — some filesystems lose the +x bit on copy.
 	os.Chmod(scriptPath, 0755)
 
 	cmd := exec.Command("/bin/bash", scriptPath)
@@ -44,7 +43,7 @@ func Run(moduleID, sectionID, scriptPath, deviceKeyPath string) (*Result, error)
 	passed := err == nil
 
 	result := &Result{
-		ModuleID:  moduleID,
+		LabID:     labID,
 		SectionID: sectionID,
 		Passed:    passed,
 		Output:    output,
@@ -60,10 +59,9 @@ func Run(moduleID, sectionID, scriptPath, deviceKeyPath string) (*Result, error)
 }
 
 // sign produces an HMAC-SHA256 over the result fields (excluding Signature).
-// The payload is deterministic — same inputs always produce the same signature.
 func sign(r *Result, key []byte) string {
 	payload := fmt.Sprintf("%s:%s:%v:%s:%s",
-		r.ModuleID,
+		r.LabID,
 		r.SectionID,
 		r.Passed,
 		r.Output,

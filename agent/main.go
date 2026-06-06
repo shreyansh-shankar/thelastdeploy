@@ -2,7 +2,7 @@
 package main
 
 import (
-	"github.com/orbstack/agent/cmd"
+	"github.com/thelastdeploy/agent/cmd"
 )
 
 func main() {

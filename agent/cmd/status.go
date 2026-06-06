@@ -1,4 +1,4 @@
-// agent/cmd/status.go
+// cmd/status.go
 package cmd
 
 import (
@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/orbstack/agent/internal/config"
-	"github.com/orbstack/agent/internal/lab"
-	"github.com/orbstack/agent/internal/localserver"
-	"github.com/orbstack/agent/internal/queue"
+	"github.com/thelastdeploy/agent/internal/cache"
+	"github.com/thelastdeploy/agent/internal/config"
+	"github.com/thelastdeploy/agent/internal/lab"
+	"github.com/thelastdeploy/agent/internal/localserver"
+	"github.com/thelastdeploy/agent/internal/queue"
 )
 
 func runStatus(args []string) error {
@@ -18,56 +19,68 @@ func runStatus(args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	orbstackDir := filepath.Dir(cfg.DeviceKeyPath)
+	tldDir := filepath.Dir(cfg.DeviceKeyPath)
 
-	// ── Auth state ───────────────────────────────────────────────────────────
+	// ── Auth ─────────────────────────────────────────────────────────────
 	fmt.Println()
 	if cfg.AuthToken != "" {
 		fmt.Println("● Auth")
 		fmt.Println("  Authenticated: yes")
-		fmt.Println("  Run 'orbstack logout' to sign out.")
+		fmt.Println("  Run 'tld logout' to sign out.")
 	} else {
 		fmt.Println("● Auth")
-		fmt.Println("  Not logged in — run: orbstack login")
-		fmt.Println("  (Results submitted without login earn no XP on the leaderboard.)")
+		fmt.Println("  Not logged in — run: tld login")
+		fmt.Println("  (Results submitted without login earn no XP.)")
 	}
 
-	// ── Active lab session ───────────────────────────────────────────────────
+	// ── Synced content ───────────────────────────────────────────────────
+	fmt.Println()
+	moduleCount, labCount := cache.CountAll(cfg.ChallengesDir)
+	fmt.Println("● Synced content")
+	fmt.Printf("  Modules: %d\n", moduleCount)
+	fmt.Printf("  Labs:    %d\n", labCount)
+
+	if moduleCount > 0 {
+		modules, _ := cache.ListModules(cfg.ChallengesDir)
+		for _, id := range modules {
+			m, err := cache.LoadModule(cfg.ChallengesDir, id)
+			if err != nil {
+				continue
+			}
+			labs, _ := cache.LoadLabsForModule(cfg.ChallengesDir, id)
+			fmt.Printf("  ├─ %s (%s) — %d lab(s)\n", m.ID, m.Title, len(labs))
+		}
+	}
+
+	// ── Active lab session ───────────────────────────────────────────────
+	fmt.Println()
 	session, err := lab.ReadSession()
 	if err != nil {
-		fmt.Println("\nNo active lab session.")
-		fmt.Println("Run 'orbstack start <module-id>' to begin.")
-
-		pending := queue.Count(orbstackDir)
-		if pending > 0 {
-			fmt.Printf("\n%d result(s) queued — run 'orbstack sync' to submit.\n", pending)
-		}
-		return nil
-	}
-
-	elapsed := time.Since(session.StartedAt).Round(time.Second)
-
-	fmt.Printf("\n● Active Lab\n")
-	fmt.Printf("  Module:     %s\n", session.ModuleID)
-	fmt.Printf("  Section:    %s\n", session.SectionID)
-	fmt.Printf("  Started:    %s\n", session.StartedAt.Format("15:04:05"))
-	fmt.Printf("  Elapsed:    %s\n", elapsed)
-	fmt.Printf("  Type:       %s\n", session.SetupType)
-	fmt.Printf("  Validator:  %s\n", session.ValidatorPath)
-
-	if session.ContainerID != "" {
-		fmt.Printf("  Container:  %s\n", session.ContainerID[:12])
-	}
-
-	if localserver.IsRunning() {
-		fmt.Printf("  API server: http://127.0.0.1:7842 ✓\n")
+		fmt.Println("● Active lab")
+		fmt.Println("  None — run 'tld start <lab-id>' to begin.")
 	} else {
-		fmt.Printf("  API server: not running\n")
+		elapsed := time.Since(session.StartedAt).Round(time.Second)
+		fmt.Println("● Active lab")
+		fmt.Printf("  Lab:       %s\n", session.LabID)
+		fmt.Printf("  Module:    %s\n", session.ModuleID)
+		fmt.Printf("  Section:   %s\n", session.SectionID)
+		fmt.Printf("  Started:   %s\n", session.StartedAt.Format("15:04:05"))
+		fmt.Printf("  Elapsed:   %s\n", elapsed)
+		fmt.Printf("  Type:      %s\n", session.SetupType)
+		if session.ContainerID != "" {
+			fmt.Printf("  Container: %s\n", session.ContainerID[:12])
+		}
+		if localserver.IsRunning() {
+			fmt.Printf("  API server: http://127.0.0.1:7842 ✓\n")
+		} else {
+			fmt.Printf("  API server: not running\n")
+		}
 	}
 
-	pending := queue.Count(orbstackDir)
+	// ── Queued results ───────────────────────────────────────────────────
+	pending := queue.Count(tldDir)
 	if pending > 0 {
-		fmt.Printf("  Queued:     %d result(s) pending sync\n", pending)
+		fmt.Printf("\n● Queued results: %d (run 'tld sync --all' to submit)\n", pending)
 	}
 
 	fmt.Println()

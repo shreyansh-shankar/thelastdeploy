@@ -1,12 +1,8 @@
-// agent/internal/queue/queue.go
-package queue
-
-// The queue is a folder of JSON files at ~/.orbstack/queue/.
-// Each file is one signed validator result that failed to POST to the API.
+// internal/queue/queue.go
 //
-// Why files and not a database? Because the queue will almost always be empty
-// or have one item. Files are readable, debuggable, and trivially deleted if
-// something goes wrong. No dependency needed.
+// File-based offline queue at ~/.tld/queue/
+// Each file is one signed validator result that failed to POST to the API.
+package queue
 
 import (
 	"encoding/json"
@@ -16,10 +12,9 @@ import (
 	"time"
 )
 
-// Entry is what we write to disk — a validator result plus metadata.
-// Uses module_id + section_id to match the new POST /results shape.
+// Entry is what we write to disk — a signed validator result keyed by lab_id.
 type Entry struct {
-	ModuleID  string    `json:"module_id"`
+	LabID     string    `json:"lab_id"`
 	SectionID string    `json:"section_id"`
 	Passed    bool      `json:"passed"`
 	Output    string    `json:"output"`
@@ -28,38 +23,31 @@ type Entry struct {
 	QueuedAt  time.Time `json:"queued_at"`
 }
 
-// Save writes a result entry to ~/.orbstack/queue/<module-id>-<section-id>-<unix>.json
-func Save(orbstackDir string, e *Entry) error {
-	dir := filepath.Join(orbstackDir, "queue")
+// Save writes an entry to ~/.tld/queue/<lab-id>-<unix>.json
+func Save(tldDir string, e *Entry) error {
+	dir := filepath.Join(tldDir, "queue")
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("create queue dir: %w", err)
 	}
-
 	e.QueuedAt = time.Now()
-	filename := fmt.Sprintf("%s-%s-%d.json", e.ModuleID, e.SectionID, e.QueuedAt.Unix())
-	path := filepath.Join(dir, filename)
-
+	filename := fmt.Sprintf("%s-%d.json", e.LabID, e.QueuedAt.Unix())
 	data, err := json.MarshalIndent(e, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal entry: %w", err)
 	}
-	if err := os.WriteFile(path, data, 0600); err != nil {
-		return fmt.Errorf("write queue file: %w", err)
-	}
-	return nil
+	return os.WriteFile(filepath.Join(dir, filename), data, 0600)
 }
 
-// LoadAll reads every pending entry from ~/.orbstack/queue/
-func LoadAll(orbstackDir string) ([]*Entry, error) {
-	dir := filepath.Join(orbstackDir, "queue")
+// LoadAll reads every pending entry from ~/.tld/queue/
+func LoadAll(tldDir string) ([]*Entry, error) {
+	dir := filepath.Join(tldDir, "queue")
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {
-		return nil, nil // empty queue, not an error
+		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("read queue dir: %w", err)
 	}
-
 	var out []*Entry
 	for _, e := range entries {
 		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
@@ -81,17 +69,17 @@ func LoadAll(orbstackDir string) ([]*Entry, error) {
 }
 
 // Delete removes a specific entry file after it has been successfully posted.
-func Delete(orbstackDir, moduleID, sectionID string, queuedAt time.Time) error {
-	filename := fmt.Sprintf("%s-%s-%d.json", moduleID, sectionID, queuedAt.Unix())
-	path := filepath.Join(orbstackDir, "queue", filename)
+func Delete(tldDir, labID string, queuedAt time.Time) error {
+	filename := fmt.Sprintf("%s-%d.json", labID, queuedAt.Unix())
+	path := filepath.Join(tldDir, "queue", filename)
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("delete queue entry: %w", err)
 	}
 	return nil
 }
 
-// Count returns how many entries are pending. Used for status display.
-func Count(orbstackDir string) int {
-	entries, _ := LoadAll(orbstackDir)
+// Count returns how many entries are pending.
+func Count(tldDir string) int {
+	entries, _ := LoadAll(tldDir)
 	return len(entries)
 }

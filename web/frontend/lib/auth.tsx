@@ -9,7 +9,7 @@ import { User } from "./types";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (token: string) => Promise<void>;
+  login: (token: string, deviceKey?: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(me);
     } catch {
       localStorage.removeItem("token");
+      localStorage.removeItem("device_key");
       setUser(null);
     }
   };
@@ -45,13 +46,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (token: string) => {
+  const login = async (token: string, deviceKey?: string) => {
     localStorage.setItem("token", token);
+    if (deviceKey) localStorage.setItem("device_key", deviceKey);
     await fetchUser();
   };
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("device_key");
     setUser(null);
   };
 

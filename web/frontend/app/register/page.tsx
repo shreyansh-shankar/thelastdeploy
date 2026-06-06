@@ -24,8 +24,8 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
     try {
-      const { access_token } = await api.register(email, username, password);
-      await login(access_token);
+      const { access_token, device_key } = await api.register(email, username, password);
+      await login(access_token, device_key);
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -42,7 +42,7 @@ export default function RegisterPage() {
             className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
             style={{ backgroundColor: "var(--accent-primary)" }}
           >
-            <span className="text-black font-black text-xl">O</span>
+            <span className="text-black font-black text-xl">T</span>
           </div>
           <h1 className="text-3xl font-black">Create account</h1>
           <p className="text-[#666] text-sm mt-1">Free forever. No credit card needed.</p>

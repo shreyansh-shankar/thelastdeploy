@@ -1,4 +1,4 @@
-// agent/cmd/root.go
+// cmd/root.go
 package cmd
 
 import (
@@ -58,18 +58,20 @@ func Execute() {
 }
 
 func printUsage() {
-	fmt.Println(`OrbStack — local DevOps practice platform
+	fmt.Println(`The Last Deploy — local DevOps practice platform
 
 Usage:
-  orbstack <command> [args]
+  tld <command> [args]
 
 Commands:
-  sync              Download latest modules from the OrbStack API
-  start <id>        Start a lab environment for the given challenge
-  stop              Stop the running lab environment
-  check             Run the validator and report pass/fail
-  status            Show running lab, elapsed time, resource usage
-  login             Authenticate with the OrbStack API
-  logout            Remove saved credentials
-  help              Show this help message`)
+  sync --all            Download all modules and labs
+  sync -m <module-id>   Sync a specific module
+  sync -l <lab-id>      Sync a specific lab
+  start <lab-id>        Start a lab environment (non-blocking)
+  stop                  Stop the running lab and local server
+  check                 Run the validator and report pass/fail
+  status                Show auth, synced content, and active lab
+  login                 Authenticate with The Last Deploy API
+  logout                Remove saved credentials
+  help                  Show this help message`)
 }

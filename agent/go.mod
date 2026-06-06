@@ -1,4 +1,4 @@
-module github.com/orbstack/agent
+module github.com/thelastdeploy/agent
 
 go 1.25.0
 

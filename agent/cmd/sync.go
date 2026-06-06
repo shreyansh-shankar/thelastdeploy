@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/orbstack/agent/internal/cache"
-	"github.com/orbstack/agent/internal/config"
-	"github.com/orbstack/agent/internal/queue"
+	"github.com/thelastdeploy/agent/internal/cache"
+	"github.com/thelastdeploy/agent/internal/config"
+	"github.com/thelastdeploy/agent/internal/queue"
 )
 
 // modulesResponse matches GET /modules
@@ -41,9 +41,9 @@ func runSync(args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	orbstackDir := filepath.Dir(cfg.DeviceKeyPath)
+	tldkDir := filepath.Dir(cfg.DeviceKeyPath)
 
-	apiReachable := drainQueue(cfg.APIBaseURL, cfg.AuthToken, orbstackDir)
+	apiReachable := drainQueue(cfg.APIBaseURL, cfg.AuthToken, tldDir)
 
 	fmt.Printf("Syncing modules from %s...\n", cfg.APIBaseURL)
 
@@ -67,7 +67,7 @@ func runSync(args []string) error {
 
 	if len(body) > 0 && body[0] == '<' {
 		fmt.Printf("Port %s is taken by another service (got HTML, not our API).\n", cfg.APIBaseURL)
-		fmt.Printf("Tip: edit ~/.orbstack/config.yaml to change api_base_url.\n\n")
+		fmt.Printf("Tip: edit ~/.tld/config.yaml to change api_base_url.\n\n")
 		fmt.Println("Falling back to local module files...")
 		return syncFromLocal(cfg.ChallengesDir)
 	}
@@ -108,50 +108,40 @@ func runSync(args []string) error {
 }
 
 // drainQueue attempts to POST any queued results to the API.
-func drainQueue(apiBaseURL, authToken, orbstackDir string) bool {
-	entries, err := queue.LoadAll(orbstackDir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "warn: could not read queue: %v\n", err)
-		return false
-	}
-	if len(entries) == 0 {
-		client := &http.Client{Timeout: 3 * time.Second}
-		resp, err := client.Get(apiBaseURL + "/health")
-		if err != nil {
-			return false
-		}
-		resp.Body.Close()
-		return resp.StatusCode < 500
-	}
+func drainQueue(apiBaseURL, authToken, tldDir string) bool {
+    entries, err := queue.LoadAll(tldDir)
+    if err != nil || len(entries) == 0 {
+        client := &http.Client{Timeout: 3 * time.Second}
+        resp, err := client.Get(apiBaseURL + "/health")
+        if err != nil {
+            return false
+        }
+        resp.Body.Close()
+        return resp.StatusCode < 500
+    }
 
-	fmt.Printf("Flushing %d queued result(s) to API...\n", len(entries))
-
-	reachable := false
-	for _, entry := range entries {
-		if err := postQueuedEntry(apiBaseURL, authToken, entry); err != nil {
-			fmt.Fprintf(os.Stderr, "  ✗ %s/%s (queued %s ago): %v\n",
-				entry.ModuleID,
-				entry.SectionID,
-				time.Since(entry.QueuedAt).Round(time.Second),
-				err,
-			)
-			if !reachable {
-				return false
-			}
-			continue
-		}
-		reachable = true
-		if err := queue.Delete(orbstackDir, entry.ModuleID, entry.SectionID, entry.QueuedAt); err != nil {
-			fmt.Fprintf(os.Stderr, "  warn: could not remove queue entry: %v\n", err)
-		} else {
-			fmt.Printf("  ✓ %s/%s (queued %s ago) — synced\n",
-				entry.ModuleID,
-				entry.SectionID,
-				time.Since(entry.QueuedAt).Round(time.Second),
-			)
-		}
-	}
-	return reachable
+    fmt.Printf("Flushing %d queued result(s) to API...\n", len(entries))
+    reachable := false
+    for _, entry := range entries {
+        if err := postQueuedEntry(apiBaseURL, authToken, entry); err != nil {
+            fmt.Fprintf(os.Stderr, "  ✗ %s (queued %s ago): %v\n",
+                entry.LabID,
+                time.Since(entry.QueuedAt).Round(time.Second),
+                err,
+            )
+            continue
+        }
+        reachable = true
+        if err := queue.Delete(tldDir, entry.LabID, entry.QueuedAt); err != nil {
+            fmt.Fprintf(os.Stderr, "  warn: could not remove queue entry: %v\n", err)
+        } else {
+            fmt.Printf("  ✓ %s (queued %s ago) — synced\n",
+                entry.LabID,
+                time.Since(entry.QueuedAt).Round(time.Second),
+            )
+        }
+    }
+    return reachable
 }
 
 func postQueuedEntry(apiBaseURL, authToken string, entry *queue.Entry) error {
@@ -220,34 +210,51 @@ func syncFromLocal(challengesDir string) error {
 	return nil
 }
 
-// syncSections copies section.yaml and validator.sh from ./challenges/ into cache.
 func syncSections(moduleID, challengesDir string) {
 	srcSectionsDir := filepath.Join("challenges", moduleID, "sections")
 	dstSectionsDir := filepath.Join(challengesDir, moduleID, "sections")
 
-	entries, err := os.ReadDir(srcSectionsDir)
+	sections, err := os.ReadDir(srcSectionsDir)
 	if err != nil {
 		return
 	}
 
-	for _, e := range entries {
-		if !e.IsDir() {
+	for _, sec := range sections {
+		if !sec.IsDir() {
 			continue
 		}
-		dirName := e.Name()
-		srcDir := filepath.Join(srcSectionsDir, dirName)
-		dstDir := filepath.Join(dstSectionsDir, dirName)
+		srcSecDir := filepath.Join(srcSectionsDir, sec.Name())
+		dstSecDir := filepath.Join(dstSectionsDir, sec.Name())
+		os.MkdirAll(dstSecDir, 0755)
 
-		if err := os.MkdirAll(dstDir, 0755); err != nil {
-			fmt.Fprintf(os.Stderr, "warn: could not create section dir %s: %v\n", dstDir, err)
+		for _, fname := range []string{"section.yaml", "content.md"} {
+			if data, err := os.ReadFile(filepath.Join(srcSecDir, fname)); err == nil {
+				os.WriteFile(filepath.Join(dstSecDir, fname), data, 0644)
+			}
+		}
+
+		// Sync all labs inside this section.
+		srcLabsDir := filepath.Join(srcSecDir, "labs")
+		labs, err := os.ReadDir(srcLabsDir)
+		if err != nil {
 			continue
 		}
-
-		if data, err := os.ReadFile(filepath.Join(srcDir, "section.yaml")); err == nil {
-			os.WriteFile(filepath.Join(dstDir, "section.yaml"), data, 0644)
+		for _, l := range labs {
+			if !l.IsDir() {
+				continue
+			}
+			syncLabFiles(moduleID, sec.Name(), l.Name(), challengesDir)
 		}
-		if data, err := os.ReadFile(filepath.Join(srcDir, "validator.sh")); err == nil {
-			os.WriteFile(filepath.Join(dstDir, "validator.sh"), data, 0755)
+	}
+}
+
+func syncLabFiles(moduleID, sectionID, labID, challengesDir string) {
+	srcDir := filepath.Join("challenges", moduleID, "sections", sectionID, "labs", labID)
+	dstDir := filepath.Join(challengesDir, moduleID, "sections", sectionID, "labs", labID)
+	os.MkdirAll(dstDir, 0755)
+	for _, fname := range []string{"lab.yaml", "validator.sh"} {
+		if data, err := os.ReadFile(filepath.Join(srcDir, fname)); err == nil {
+			os.WriteFile(filepath.Join(dstDir, fname), data, 0755)
 		}
 	}
 }

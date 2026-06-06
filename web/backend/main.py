@@ -5,9 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, modules, results, users
 
 app = FastAPI(
-    title="OrbStack API",
-    description="Backend for the OrbStack DevOps practice platform",
-    version="0.2.0",
+    title="The Last Deploy API",
+    description="Backend for The Last Deploy DevOps practice platform",
+    version="0.3.0",
 )
 
 app.add_middleware(
@@ -22,7 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, tags=["auth"])
-app.include_router(modules.router, tags=["modules"])
+app.include_router(modules.router, tags=["modules"])   # includes /labs/:id too
 app.include_router(results.router, tags=["results"])
 app.include_router(users.router, tags=["users"])
 

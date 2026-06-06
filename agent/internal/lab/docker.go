@@ -1,24 +1,19 @@
-// agent/internal/lab/docker.go
+// internal/lab/docker.go
 package lab
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/orbstack/agent/internal/cache"
+	"github.com/thelastdeploy/agent/internal/cache"
 )
 
-// StartDocker launches a detached Docker container for the given module.
-// Returns the container ID assigned by Docker so we can stop it later.
-func StartDocker(m *cache.Module) (string, error) {
+func StartDocker(lab *cache.Lab) (string, error) {
 	if err := exec.Command("docker", "info").Run(); err != nil {
 		return "", fmt.Errorf("docker is not running — please start Docker Desktop first")
 	}
-
-	args := buildDockerArgs(m)
-
+	args := buildDockerArgs(lab)
 	detachArgs := append([]string{"run", "--detach"}, args...)
 	outBytes, err := exec.Command("docker", detachArgs...).Output()
 	if err != nil {
@@ -29,7 +24,6 @@ func StartDocker(m *cache.Module) (string, error) {
 	return containerID, nil
 }
 
-// StopDocker removes the container by ID.
 func StopDocker(containerID string) error {
 	if containerID == "" {
 		return nil
@@ -45,26 +39,24 @@ func StopDocker(containerID string) error {
 	return nil
 }
 
-func buildDockerArgs(m *cache.Module) []string {
-	cpu := m.ResourceLimitsCPU
-	mem := m.ResourceLimitsMem
+func buildDockerArgs(lab *cache.Lab) []string {
+	cpu := lab.ResourcesCPU
+	mem := lab.ResourcesMem
 	if cpu == 0 {
 		cpu = 1
 	}
 	if mem == 0 {
 		mem = 512
 	}
-
 	args := []string{
 		fmt.Sprintf("--cpus=%.1f", float64(cpu)),
 		fmt.Sprintf("--memory=%dm", mem),
 		"--rm",
-		"--name", "orbstack-" + m.ID,
+		"--name", "tld-" + lab.ID,
 	}
-
-	image := m.Topic + ":latest"
+	image := lab.ModuleID + ":latest"
 	args = append(args, image)
-	for _, cmd := range m.SeedCommands {
+	for _, cmd := range lab.SeedCommands {
 		args = append(args, strings.Fields(cmd)...)
 	}
 	return args
@@ -76,6 +68,3 @@ func shortID(id string) string {
 	}
 	return id
 }
-
-// Ensure os is used (streaming output on non-detach path kept for future use).
-var _ = os.Stdout
