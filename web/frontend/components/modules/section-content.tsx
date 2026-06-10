@@ -2,13 +2,449 @@
 
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { Section, ModuleDetail } from "@/lib/types";
 import { LabBlock } from "./lab-block";
-import { CheckCircle2, ArrowLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { CheckCircle2, ArrowLeft, ChevronRight, RefreshCw, Copy, Check, Info, Lightbulb, AlertCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import React from "react";
+
+// Helper to escape HTML characters
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Custom simple syntax highlighter for devops challenges
+function highlightCode(code: string, language: string) {
+  if (!code) return "";
+  const lang = language.toLowerCase();
+
+  // Helper to escape HTML characters inside tokenizers
+  const esc = (text: string) => {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  if (["bash", "sh", "shell"].includes(lang)) {
+    let result = "";
+    let i = 0;
+    const len = code.length;
+    const cmds = ["docker", "sudo", "cd", "run", "npm", "git", "apt-get", "pip", "python", "cat", "echo", "mkdir", "rm", "ls", "grep", "ssh", "curl", "wget", "chmod", "chown", "systemctl"];
+    
+    while (i < len) {
+      // Comment
+      if (code[i] === "#" && (i === 0 || code[i-1] === "\n" || /\s/.test(code[i-1]))) {
+        let comment = "";
+        while (i < len && code[i] !== "\n") {
+          comment += code[i];
+          i++;
+        }
+        result += `<span class="text-zinc-500 font-normal">${esc(comment)}</span>`;
+        continue;
+      }
+      
+      // String
+      if (code[i] === '"' || code[i] === "'") {
+        const quote = code[i];
+        let str = quote;
+        i++;
+        while (i < len && code[i] !== quote) {
+          if (code[i] === "\\") {
+            str += code[i];
+            i++;
+          }
+          if (i < len) {
+            str += code[i];
+            i++;
+          }
+        }
+        if (i < len) {
+          str += quote;
+          i++;
+        }
+        result += `<span class="text-sky-300">${esc(str)}</span>`;
+        continue;
+      }
+      
+      // Word (commands / flags / keywords)
+      if (/[a-zA-Z0-9_-]/.test(code[i])) {
+        let word = "";
+        while (i < len && /[a-zA-Z0-9_-]/.test(code[i])) {
+          word += code[i];
+          i++;
+        }
+        
+        if (cmds.includes(word)) {
+          result += `<span class="text-emerald-400 font-semibold">${esc(word)}</span>`;
+        } else if (word.startsWith("-")) {
+          result += `<span class="text-amber-400">${esc(word)}</span>`;
+        } else {
+          result += esc(word);
+        }
+        continue;
+      }
+      
+      result += esc(code[i]);
+      i++;
+    }
+    return <span className="font-mono text-zinc-100" dangerouslySetInnerHTML={{ __html: result }} />;
+  }
+
+  if (["yaml", "yml"].includes(lang)) {
+    let result = "";
+    let i = 0;
+    const len = code.length;
+    
+    while (i < len) {
+      // Comment
+      if (code[i] === "#") {
+        let comment = "";
+        while (i < len && code[i] !== "\n") {
+          comment += code[i];
+          i++;
+        }
+        result += `<span class="text-zinc-500">${esc(comment)}</span>`;
+        continue;
+      }
+      
+      // String
+      if (code[i] === '"' || code[i] === "'") {
+        const quote = code[i];
+        let str = quote;
+        i++;
+        while (i < len && code[i] !== quote) {
+          if (code[i] === "\\") {
+            str += code[i];
+            i++;
+          }
+          if (i < len) {
+            str += code[i];
+            i++;
+          }
+        }
+        if (i < len) {
+          str += quote;
+          i++;
+        }
+        result += `<span class="text-zinc-300">${esc(str)}</span>`;
+        continue;
+      }
+      
+      // Key check
+      if (/[a-zA-Z0-9_-]/.test(code[i])) {
+        let word = "";
+        while (i < len && /[a-zA-Z0-9_-]/.test(code[i])) {
+          word += code[i];
+          i++;
+        }
+        
+        let nextIdx = i;
+        while (nextIdx < len && /\s/.test(code[nextIdx]) && code[nextIdx] !== "\n") {
+          nextIdx++;
+        }
+        
+        let isKey = false;
+        if (nextIdx < len && code[nextIdx] === ":") {
+          if (nextIdx + 1 >= len || /\s/.test(code[nextIdx + 1])) {
+            isKey = true;
+          }
+        }
+        
+        if (isKey) {
+          result += `<span class="text-emerald-400 font-semibold">${esc(word)}</span>`;
+        } else {
+          result += esc(word);
+        }
+        continue;
+      }
+      
+      result += esc(code[i]);
+      i++;
+    }
+    return <span className="font-mono text-zinc-100" dangerouslySetInnerHTML={{ __html: result }} />;
+  }
+
+  if (["python", "py"].includes(lang)) {
+    let result = "";
+    let i = 0;
+    const len = code.length;
+    const keywords = ["def", "class", "import", "from", "as", "return", "if", "else", "elif", "for", "while", "in", "is", "not", "and", "or", "try", "except", "with", "print", "lambda", "yield"];
+    
+    while (i < len) {
+      // Comment
+      if (code[i] === "#") {
+        let comment = "";
+        while (i < len && code[i] !== "\n") {
+          comment += code[i];
+          i++;
+        }
+        result += `<span class="text-zinc-500">${esc(comment)}</span>`;
+        continue;
+      }
+      
+      // String
+      if (code[i] === '"' || code[i] === "'") {
+        const quote = code[i];
+        let str = quote;
+        i++;
+        while (i < len && code[i] !== quote) {
+          if (code[i] === "\\") {
+            str += code[i];
+            i++;
+          }
+          if (i < len) {
+            str += code[i];
+            i++;
+          }
+        }
+        if (i < len) {
+          str += quote;
+          i++;
+        }
+        result += `<span class="text-emerald-300">${esc(str)}</span>`;
+        continue;
+      }
+      
+      // Word / Keyword
+      if (/[a-zA-Z0-9_]/.test(code[i])) {
+        let word = "";
+        while (i < len && /[a-zA-Z0-9_]/.test(code[i])) {
+          word += code[i];
+          i++;
+        }
+        
+        if (keywords.includes(word)) {
+          result += `<span class="text-purple-400 font-semibold">${esc(word)}</span>`;
+        } else {
+          result += esc(word);
+        }
+        continue;
+      }
+      
+      result += esc(code[i]);
+      i++;
+    }
+    return <span className="font-mono text-zinc-100" dangerouslySetInnerHTML={{ __html: result }} />;
+  }
+
+  if (["json"].includes(lang)) {
+    let result = "";
+    let i = 0;
+    const len = code.length;
+    
+    while (i < len) {
+      // String
+      if (code[i] === '"') {
+        let str = '"';
+        i++;
+        while (i < len && code[i] !== '"') {
+          if (code[i] === "\\") {
+            str += code[i];
+            i++;
+          }
+          if (i < len) {
+            str += code[i];
+            i++;
+          }
+        }
+        if (i < len) {
+          str += '"';
+          i++;
+        }
+        
+        let nextIdx = i;
+        while (nextIdx < len && /\s/.test(code[nextIdx])) {
+          nextIdx++;
+        }
+        
+        if (nextIdx < len && code[nextIdx] === ":") {
+          result += `<span class="text-emerald-400">${esc(str)}</span>`;
+        } else {
+          result += `<span class="text-sky-300">${esc(str)}</span>`;
+        }
+        continue;
+      }
+      
+      // Keywords or numbers
+      if (/[a-zA-Z0-9._-]/.test(code[i])) {
+        let word = "";
+        while (i < len && /[a-zA-Z0-9._-]/.test(code[i])) {
+          word += code[i];
+          i++;
+        }
+        
+        if (["true", "false", "null"].includes(word) || !isNaN(Number(word))) {
+          result += `<span class="text-amber-400">${esc(word)}</span>`;
+        } else {
+          result += esc(word);
+        }
+        continue;
+      }
+      
+      result += esc(code[i]);
+      i++;
+    }
+    return <span className="font-mono text-zinc-100" dangerouslySetInnerHTML={{ __html: result }} />;
+  }
+
+  return <span className="font-mono text-zinc-100">{code}</span>;
+}
+
+
+// Copyable CodeBlock component
+interface CodeBlockProps {
+  language: string;
+  value: string;
+}
+
+function CodeBlock({ language, value }: CodeBlockProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
+
+  return (
+    <div className="relative border border-border rounded-xl overflow-hidden bg-zinc-950 text-zinc-50 font-mono text-xs my-6 shadow-md">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900 border-b border-zinc-800 text-[10px] uppercase font-bold tracking-wider text-zinc-400 select-none">
+        <span>{language}</span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 hover:text-zinc-200 transition-colors py-0.5 px-2 rounded hover:bg-zinc-800 cursor-pointer"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3 text-emerald-400" />
+              <span className="text-emerald-400">Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              <span>Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+      {/* Code Body */}
+      <div className="p-4 overflow-x-auto max-h-[500px]">
+        <div className="whitespace-pre text-left font-mono text-zinc-100 overflow-visible">
+          {highlightCode(value, language)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// GitHub-style Alert blockquote parser helper
+type AlertType = "note" | "tip" | "important" | "warning" | "caution";
+
+function parseBlockquote(children: React.ReactNode): { alertType: AlertType | null; children: React.ReactNode } {
+  let alertType: AlertType | null = null;
+
+  const traverseAndExtract = (node: React.ReactNode): React.ReactNode => {
+    if (!node) return node;
+
+    if (typeof node === "string") {
+      const match = node.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)/i);
+      if (match) {
+        alertType = match[1].toLowerCase() as AlertType;
+        return match[2];
+      }
+      return node;
+    }
+
+    if (Array.isArray(node)) {
+      const result = [...node];
+      if (result.length > 0) {
+        const firstProcessed = traverseAndExtract(result[0]);
+        if (alertType) {
+          result[0] = firstProcessed;
+        }
+      }
+      return result;
+    }
+
+    if (React.isValidElement(node)) {
+      const element = node as React.ReactElement<any>;
+      if (element.props && element.props.children) {
+        const newChildren = traverseAndExtract(element.props.children);
+        if (alertType) {
+          return React.cloneElement(element, {}, newChildren);
+        }
+      }
+    }
+
+    return node;
+  };
+
+  const newChildren = traverseAndExtract(children);
+  return { alertType, children: newChildren };
+}
+
+const AlertIcon: Record<AlertType, React.ComponentType<any>> = {
+  note: Info,
+  tip: Lightbulb,
+  important: AlertCircle,
+  warning: AlertTriangle,
+  caution: AlertCircle,
+};
+
+const AlertStyles: Record<AlertType, { border: string; bg: string; text: string; title: string; label: string }> = {
+  note: {
+    border: "border-l-4 border-blue-500 dark:border-blue-400",
+    bg: "bg-blue-50/60 dark:bg-blue-950/15",
+    text: "text-blue-900 dark:text-blue-300",
+    title: "text-blue-800 dark:text-blue-200",
+    label: "Note",
+  },
+  tip: {
+    border: "border-l-4 border-emerald-500 dark:border-emerald-400",
+    bg: "bg-emerald-50/60 dark:bg-emerald-950/15",
+    text: "text-emerald-900 dark:text-emerald-300",
+    title: "text-emerald-800 dark:text-emerald-200",
+    label: "Tip",
+  },
+  important: {
+    border: "border-l-4 border-green-600 dark:border-green-500",
+    bg: "bg-green-50/60 dark:bg-green-950/15",
+    text: "text-green-900 dark:text-green-300",
+    title: "text-green-800 dark:text-green-200",
+    label: "Important",
+  },
+  warning: {
+    border: "border-l-4 border-amber-500 dark:border-amber-400",
+    bg: "bg-amber-50/60 dark:bg-amber-950/15",
+    text: "text-amber-900 dark:text-amber-300",
+    title: "text-amber-800 dark:text-amber-200",
+    label: "Warning",
+  },
+  caution: {
+    border: "border-l-4 border-red-500 dark:border-red-400",
+    bg: "bg-red-50/60 dark:bg-red-950/15",
+    text: "text-red-900 dark:text-red-300",
+    title: "text-red-800 dark:text-red-200",
+    label: "Caution",
+  },
+};
+
 
 interface Props {
   section: Section;
@@ -91,6 +527,66 @@ export function SectionContent({
   const prevSection = module.sections.find((s) => s.order === section.order - 1);
   const nextSection = module.sections.find((s) => s.order === section.order + 1);
 
+  const markdownComponents = {
+    // Customize pre to prevent Tailwind's prose-pre styles
+    pre: ({ children }: any) => {
+      return <div className="my-6">{children}</div>;
+    },
+    // Customize code component
+    code: ({ node, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || "");
+      const isInline = !match && !String(children).includes("\n");
+      
+      if (isInline) {
+        return (
+          <code
+            className="text-[var(--accent-primary)] bg-muted px-1.5 py-0.5 rounded text-xs font-mono font-semibold"
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      }
+
+      const codeString = String(children).replace(/\n$/, "");
+      const language = match ? match[1] : "text";
+
+      return <CodeBlock language={language} value={codeString} />;
+    },
+    // Customize blockquote component to support Alerts
+    blockquote: ({ children }: any) => {
+      const { alertType, children: cleanChildren } = parseBlockquote(children);
+
+      if (alertType) {
+        const styles = AlertStyles[alertType];
+        const Icon = AlertIcon[alertType];
+
+        return (
+          <div className={`my-6 p-4 rounded-xl border-l-4 ${styles.border} ${styles.bg} ${styles.text} flex gap-3.5`}>
+            <div className="shrink-0 pt-0.5">
+              <Icon className="h-5 w-5" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className={`text-xs font-black uppercase tracking-wider ${styles.title}`}>
+                {styles.label}
+              </div>
+              <div className="text-sm leading-relaxed prose-p:my-0 prose-p:text-inherit">
+                {cleanChildren}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Standard blockquote styling
+      return (
+        <blockquote className="border-l-4 border-border text-muted-foreground bg-muted/30 px-4 py-2 rounded-r-xl my-6 italic">
+          {children}
+        </blockquote>
+      );
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
 
@@ -127,7 +623,7 @@ export function SectionContent({
           prose-blockquote:border-l-[var(--accent-primary)] prose-blockquote:text-muted-foreground prose-blockquote:bg-muted/50 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-xl
           prose-table:text-sm prose-th:text-muted-foreground prose-th:font-semibold prose-td:text-muted-foreground/95
           prose-hr:border-border prose-li:text-muted-foreground prose-a:text-[var(--accent-primary)] prose-a:no-underline hover:prose-a:underline">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{section.content}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{section.content}</ReactMarkdown>
         </div>
       )}
 
