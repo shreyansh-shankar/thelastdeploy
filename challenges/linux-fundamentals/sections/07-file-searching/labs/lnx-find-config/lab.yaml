@@ -1,0 +1,11 @@
+id: lnx-find-config
+title: "Locate configuration files using find"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/search-test/configs/prod"
+    - "echo 'database_port=5432' > $HOME/search-test/configs/prod/app.conf"
+    - "echo 'app_secret=devlab-key' >> $HOME/search-test/configs/prod/app.conf"
+    - "rm -f $HOME/search-test/found_conf.txt"

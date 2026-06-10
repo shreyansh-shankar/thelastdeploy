@@ -1,0 +1,12 @@
+id: lnx-combined-search
+title: "Combined find and grep operations"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/search-test/logs"
+    - "echo 'INFO: boot system' > $HOME/search-test/logs/error-log-1.txt"
+    - "echo 'FATAL: system exploded' >> $HOME/search-test/logs/error-log-1.txt"
+    - "echo 'INFO: retry login' > $HOME/search-test/logs/error-log-2.txt"
+    - "rm -f $HOME/search-test/fatal_log.txt"

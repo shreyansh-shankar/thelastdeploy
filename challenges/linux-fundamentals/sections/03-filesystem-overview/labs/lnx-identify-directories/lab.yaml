@@ -1,0 +1,8 @@
+id: lnx-identify-directories
+title: "Identify standard system directories"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "rm -f $HOME/directories.txt"

@@ -1,0 +1,12 @@
+id: lnx-less-logfile
+title: "Search logs using less"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/view-test"
+    - "echo '2026-06-10T11:59:00Z INFO System boot complete' > $HOME/view-test/system.log"
+    - "echo '2026-06-10T12:00:00Z ERR_CONN_TIMEOUT Connection to database timed out' >> $HOME/view-test/system.log"
+    - "echo '2026-06-10T12:01:00Z INFO Retry successful' >> $HOME/view-test/system.log"
+    - "rm -f $HOME/view-test/error_time.txt"

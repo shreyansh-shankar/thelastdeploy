@@ -1,0 +1,9 @@
+id: lnx-help-flags
+title: "Explore commands using help flags"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/help-test"
+    - "rm -f $HOME/help-test/size_flag.txt"

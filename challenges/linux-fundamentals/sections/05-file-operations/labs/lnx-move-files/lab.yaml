@@ -1,0 +1,10 @@
+id: lnx-move-files
+title: "Move or rename files"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/files-test"
+    - "echo 'moved' > $HOME/files-test/move-me.txt"
+    - "rm -f $HOME/files-test/moved.txt"

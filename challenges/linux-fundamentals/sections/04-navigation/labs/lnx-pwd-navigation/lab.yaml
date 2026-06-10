@@ -1,0 +1,8 @@
+id: lnx-pwd-navigation
+title: "Save your working directory path"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "rm -f $HOME/current_path.txt"

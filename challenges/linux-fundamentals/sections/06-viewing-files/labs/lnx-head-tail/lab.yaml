@@ -1,0 +1,12 @@
+id: lnx-head-tail
+title: "Inspect files with head and tail"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/view-test"
+    - "echo 'first_line' > $HOME/view-test/growth.txt"
+    - "for i in {2..19}; do echo \"Line $i\" >> $HOME/view-test/growth.txt; done"
+    - "echo 'last_line' >> $HOME/view-test/growth.txt"
+    - "rm -f $HOME/view-test/end.txt"

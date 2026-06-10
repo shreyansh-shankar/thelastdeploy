@@ -1,0 +1,10 @@
+id: lnx-cat-file
+title: "View files using cat"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/view-test"
+    - "echo 'LINUX_RULES' > $HOME/view-test/short.txt"
+    - "rm -f $HOME/view-test/code.txt"

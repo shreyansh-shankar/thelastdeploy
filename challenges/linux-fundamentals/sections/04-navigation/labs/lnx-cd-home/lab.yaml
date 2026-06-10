@@ -1,0 +1,9 @@
+id: lnx-cd-home
+title: "Navigate to a nested target folder"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/navigation-test/target"
+    - "rm -f $HOME/navigation-test/path.txt"

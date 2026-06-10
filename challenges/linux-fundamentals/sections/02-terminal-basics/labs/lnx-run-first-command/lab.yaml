@@ -1,0 +1,8 @@
+id: lnx-run-first-command
+title: "Run your first command"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "rm -f $HOME/first_command.txt"

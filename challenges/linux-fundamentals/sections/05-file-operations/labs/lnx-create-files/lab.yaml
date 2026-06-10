@@ -1,0 +1,8 @@
+id: lnx-create-files
+title: "Create nested files and directories"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "rm -rf $HOME/files-test"
