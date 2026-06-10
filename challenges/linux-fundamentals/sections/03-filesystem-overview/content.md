@@ -35,10 +35,7 @@ Here are some of the most critical standard directories in the Linux filesystem:
    tld start lnx-identify-directories
    ```
 2. Identify which standard system directory contains system-wide configuration files (e.g., configurations, startup scripts).
-3. Create a file named `directories.txt` in your home directory and write its absolute path inside it:
-   ```bash
-   echo "/etc" > ~/directories.txt
-   ```
+3. Create a file named `directories.txt` in your home directory and write its absolute path inside it.
 4. Verify the task to earn your XP:
    ```bash
    tld check

@@ -40,11 +40,7 @@ To move to a different directory, use `cd` followed by the directory path.
    ```bash
    tld start lnx-pwd-navigation
    ```
-2. Navigate to your user's home directory and save the output of the `pwd` command to a file named `current_path.txt` in your home directory:
-   ```bash
-   cd ~
-   pwd > ~/current_path.txt
-   ```
+2. Navigate to your user's home directory and save the output of the `pwd` command to a file named `current_path.txt` in your home directory.
 3. Verify the task to earn your XP:
    ```bash
    tld check
@@ -55,12 +51,8 @@ To move to a different directory, use `cd` followed by the directory path.
    ```bash
    tld start lnx-cd-home
    ```
-2. The setup script created a directory `~/navigation-test/target`. Use `cd` to navigate inside it.
-3. Save the output of `pwd` while inside that folder to a file named `path.txt` inside the `~/navigation-test` directory:
-   ```bash
-   cd ~/navigation-test/target
-   pwd > ~/navigation-test/path.txt
-   ```
+2. Navigate inside the `~/navigation-test/target` directory.
+3. Save the output of `pwd` while inside that folder to a file named `path.txt` inside the `~/navigation-test` directory.
 4. Verify the task to earn your XP:
    ```bash
    tld check
@@ -72,10 +64,7 @@ To move to a different directory, use `cd` followed by the directory path.
    tld start lnx-find-target-directory
    ```
 2. Locate the folder named `target` nested inside `~/search-zone`.
-3. Save its absolute path (e.g. `/home/fsociety/search-zone/sub1/sub2/sub3/target`) to a file named `found_path.txt` in your home directory:
-   ```bash
-   echo "/home/fsociety/search-zone/sub1/sub2/sub3/target" > ~/found_path.txt
-   ```
+3. Save its absolute path to a file named `found_path.txt` in your home directory.
 4. Verify the task:
    ```bash
    tld check

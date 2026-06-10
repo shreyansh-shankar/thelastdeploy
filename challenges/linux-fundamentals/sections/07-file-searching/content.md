@@ -58,10 +58,7 @@ The `grep` command searches files for lines containing a specific pattern (regul
    tld start lnx-find-config
    ```
 2. Find the file named `app.conf` under `~/search-test/` using the `find` utility.
-3. Save its absolute path to a file named `found_conf.txt` directly inside the `~/search-test/` directory:
-   ```bash
-   find ~/search-test/ -name "app.conf" > ~/search-test/found_conf.txt
-   ```
+3. Save its absolute path to a file named `found_conf.txt` directly inside the `~/search-test/` directory.
 4. Verify the task to earn your XP:
    ```bash
    tld check
@@ -73,10 +70,7 @@ The `grep` command searches files for lines containing a specific pattern (regul
    tld start lnx-grep-secret
    ```
 2. Search for the line containing `devlab-key` in configuration files inside `~/search-test/configs/` using `grep`.
-3. Save the matching line (e.g. `app_secret=devlab-key`) to a file named `secret_line.txt` inside `~/search-test/`:
-   ```bash
-   grep -r "devlab-key" ~/search-test/configs/ > ~/search-test/secret_line.txt
-   ```
+3. Save the matching line to a file named `secret_line.txt` inside `~/search-test/`.
 4. Verify the task:
    ```bash
    tld check
@@ -88,10 +82,7 @@ The `grep` command searches files for lines containing a specific pattern (regul
    tld start lnx-combined-search
    ```
 2. Look up which log file under `~/search-test/logs/` contains the critical error keyword `FATAL`.
-3. Save the path of that file (which should end in `error-log-1.txt`) to a file named `fatal_log.txt` inside `~/search-test/`:
-   ```bash
-   grep -rl "FATAL" ~/search-test/logs/ > ~/search-test/fatal_log.txt
-   ```
+3. Save the path of that file (which should end in `error-log-1.txt`) to a file named `fatal_log.txt` inside `~/search-test/`.
 4. Verify the task:
    ```bash
    tld check

@@ -32,10 +32,7 @@ command [options] [arguments]
    ```bash
    tld start lnx-open-terminal
    ```
-2. Prove your terminal is working by creating an empty file named `terminal_ready` in your home directory:
-   ```bash
-   touch ~/terminal_ready
-   ```
+2. Prove your terminal is working by creating an empty file named `terminal_ready` in your home directory (`~`).
 3. Verify the task to earn your XP:
    ```bash
    tld check
@@ -46,10 +43,7 @@ command [options] [arguments]
    ```bash
    tld start lnx-run-first-command
    ```
-2. Create a file named `first_command.txt` in your home directory containing the exact text `hello devlab`:
-   ```bash
-   echo "hello devlab" > ~/first_command.txt
-   ```
+2. Create a file named `first_command.txt` in your home directory containing the exact text `hello devlab` (remember to use standard shell redirection).
 3. Verify the task:
    ```bash
    tld check

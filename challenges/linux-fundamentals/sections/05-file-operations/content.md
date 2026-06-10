@@ -55,12 +55,8 @@ The `mv` command is used for both moving files to different directories and rena
    ```bash
    tld start lnx-create-files
    ```
-2. Create a directory named `files-test` in your home directory, and touch a file named `newfile.txt` inside it.
-3. Write the exact text `created` inside `newfile.txt`:
-   ```bash
-   mkdir -p ~/files-test
-   echo "created" > ~/files-test/newfile.txt
-   ```
+2. Create a directory named `files-test` in your home directory, and create a file named `newfile.txt` inside it.
+3. Write the exact text `created` inside `newfile.txt`.
 4. Verify the task to earn your XP:
    ```bash
    tld check
@@ -71,10 +67,7 @@ The `mv` command is used for both moving files to different directories and rena
    ```bash
    tld start lnx-copy-files
    ```
-2. The setup script created `~/files-test/source.txt`. Copy it to a new file named `destination.txt` in the same directory:
-   ```bash
-   cp ~/files-test/source.txt ~/files-test/destination.txt
-   ```
+2. You will find a file named `source.txt` inside `~/files-test/`. Copy it to a new file named `destination.txt` in the same directory.
 3. Verify the task to earn your XP:
    ```bash
    tld check
@@ -85,10 +78,7 @@ The `mv` command is used for both moving files to different directories and rena
    ```bash
    tld start lnx-move-files
    ```
-2. The setup script created `~/files-test/move-me.txt`. Rename/move it to a new file named `moved.txt` in the same directory:
-   ```bash
-   mv ~/files-test/move-me.txt ~/files-test/moved.txt
-   ```
+2. You will find a file named `move-me.txt` inside `~/files-test/`. Rename/move it to a new file named `moved.txt` in the same directory.
 3. Verify the task:
    ```bash
    tld check
@@ -99,10 +89,7 @@ The `mv` command is used for both moving files to different directories and rena
    ```bash
    tld start lnx-delete-files
    ```
-2. Delete the file named `delete-me.txt` inside `~/files-test`:
-   ```bash
-   rm ~/files-test/delete-me.txt
-   ```
+2. Delete the file named `delete-me.txt` inside `~/files-test/`.
 3. Verify the task:
    ```bash
    tld check

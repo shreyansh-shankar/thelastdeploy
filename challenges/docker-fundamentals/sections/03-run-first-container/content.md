@@ -96,12 +96,14 @@ docker rmi hello-world
 
 ## Lab Task
 
-Run the `hello-world` container on your machine. Once you've seen the "Hello from Docker!" message, run `tld check` to validate and earn your XP.
+Follow these instructions to complete the lab:
 
-```bash
-docker run hello-world
-tld check
-```
+1. Pull and run the `hello-world` container on your machine.
+2. Confirm you see the "Hello from Docker!" message printed in your terminal.
+3. Validate your progress to earn your XP:
+   ```bash
+   tld check
+   ```
 
 ---
 
