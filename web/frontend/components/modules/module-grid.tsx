@@ -2,79 +2,69 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Module, Difficulty, Topic } from "@/lib/types";
 import { ModuleCard } from "./module-card";
-
-const TOPICS = ["all", "docker", "kubernetes", "linux", "cicd"] as const;
-const DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"] as const;
-
-const topicLabels: Record<string, string> = {
-  all: "All Topics", docker: "Docker",
-  kubernetes: "Kubernetes", linux: "Linux", cicd: "CI/CD",
-};
-
-const diffLabels: Record<string, string> = {
-  all: "All Levels", beginner: "Beginner",
-  intermediate: "Intermediate", advanced: "Advanced",
-};
-
-function FilterBtn({ active, onClick, children }: {
-  active: boolean; onClick: () => void; children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150 border cursor-pointer ${
-        active
-          ? "bg-[var(--accent-primary)] text-white dark:text-black border-[var(--accent-primary)] font-bold shadow-sm shadow-[rgba(var(--accent-primary-rgb),0.2)]"
-          : "bg-card text-muted-foreground border-border hover:bg-muted"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
+import { ModuleFilters } from "./module-filters";
 
 export function ModuleGrid({ modules }: { modules: Module[] }) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [topic, setTopic] = useState<"all" | Topic>("all");
   const [difficulty, setDifficulty] = useState<"all" | Difficulty>("all");
 
-  const filtered = modules.filter((m) => {
-    if (topic !== "all" && m.topic !== topic) return false;
-    if (difficulty !== "all" && m.difficulty !== difficulty) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    return modules.filter((m) => {
+      if (topic !== "all" && m.topic !== topic) return false;
+      if (difficulty !== "all" && m.difficulty !== difficulty) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const titleMatch = m.title.toLowerCase().includes(q);
+        const descMatch = m.description?.toLowerCase().includes(q) ?? false;
+        if (!titleMatch && !descMatch) return false;
+      }
+      return true;
+    });
+  }, [modules, topic, difficulty, searchQuery]);
+
+  const hasActiveFilters = searchQuery || topic !== "all" || difficulty !== "all";
 
   return (
     <div>
-      <div className="flex flex-col gap-4 mb-10">
-        <div className="flex flex-wrap gap-2">
-          {TOPICS.map((t) => (
-            <FilterBtn key={t} active={topic === t} onClick={() => setTopic(t)}>
-              {topicLabels[t]}
-            </FilterBtn>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {DIFFICULTIES.map((d) => (
-            <FilterBtn key={d} active={difficulty === d} onClick={() => setDifficulty(d)}>
-              {diffLabels[d]}
-            </FilterBtn>
-          ))}
-        </div>
+      <div className="mb-10">
+        <ModuleFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedTopic={topic}
+          onTopicChange={setTopic}
+          selectedDifficulty={difficulty}
+          onDifficultyChange={setDifficulty}
+          resultCount={filtered.length}
+          totalCount={modules.length}
+        />
       </div>
 
-      <p className="text-sm text-muted-foreground/80 mb-6 font-mono font-semibold">
-        {filtered.length} module{filtered.length !== 1 ? "s" : ""} found
-      </p>
-
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground text-sm">
-          No modules match your filters.
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="text-4xl mb-4 opacity-20">🔍</div>
+          <p className="text-muted-foreground text-sm font-semibold mb-1">
+            {searchQuery
+              ? `No modules matching "${searchQuery}"`
+              : "No modules match your filters"}
+          </p>
+          <p className="text-xs text-muted-foreground/60 mb-4">
+            Try adjusting your search or filter criteria
+          </p>
+          {hasActiveFilters && (
+            <button
+              onClick={() => { setSearchQuery(""); setTopic("all"); setDifficulty("all"); }}
+              className="text-sm font-semibold text-[var(--accent-primary)] hover:underline cursor-pointer"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300">
           {filtered.map((m) => (
             <ModuleCard key={m.id} module={m} />
           ))}

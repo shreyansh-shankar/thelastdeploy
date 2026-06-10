@@ -32,6 +32,8 @@
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
   --border: #e2e8f0;
   --input: #f1f5f9;
   --muted: #f1f5f9;
@@ -71,6 +73,8 @@
   --foreground: #f4f4f5;
   --card: #18181b;
   --card-foreground: #f4f4f5;
+  --popover: #18181b;
+  --popover-foreground: #f4f4f5;
   --border: #27272a;
   --input: #27272a;
   --muted: #27272a;
