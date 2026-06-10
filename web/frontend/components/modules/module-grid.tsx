@@ -25,11 +25,11 @@ function FilterBtn({ active, onClick, children }: {
   return (
     <button
       onClick={onClick}
-      className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150 border"
-      style={active
-        ? { backgroundColor: "var(--accent-primary)", color: "#000", borderColor: "var(--accent-primary)" }
-        : { backgroundColor: "#111", color: "#888", borderColor: "#2a2a2a" }
-      }
+      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150 border cursor-pointer ${
+        active
+          ? "bg-[var(--accent-primary)] text-white dark:text-black border-[var(--accent-primary)] font-bold shadow-sm shadow-[rgba(var(--accent-primary-rgb),0.2)]"
+          : "bg-card text-muted-foreground border-border hover:bg-muted"
+      }`}
     >
       {children}
     </button>
@@ -65,12 +65,12 @@ export function ModuleGrid({ modules }: { modules: Module[] }) {
         </div>
       </div>
 
-      <p className="text-sm text-[#555] mb-6 font-mono">
+      <p className="text-sm text-muted-foreground/80 mb-6 font-mono font-semibold">
         {filtered.length} module{filtered.length !== 1 ? "s" : ""} found
       </p>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-[#555] text-sm">
+        <div className="text-center py-20 text-muted-foreground text-sm">
           No modules match your filters.
         </div>
       ) : (

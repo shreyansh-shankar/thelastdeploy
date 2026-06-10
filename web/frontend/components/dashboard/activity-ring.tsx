@@ -30,7 +30,8 @@ export function ActivityRing({
         <svg width={size} height={size} className="-rotate-90">
           <circle
             cx={size / 2} cy={size / 2} r={radius}
-            fill="none" stroke="#1a1a1a" strokeWidth={strokeWidth}
+            fill="none" stroke="currentColor" strokeWidth={strokeWidth}
+            className="text-border"
           />
           <circle
             cx={size / 2} cy={size / 2} r={radius}
@@ -46,8 +47,8 @@ export function ActivityRing({
         </div>
       </div>
       <div className="text-center">
-        <p className="text-sm font-bold text-white">{label}</p>
-        <p className="text-xs text-[#555]">{sublabel}</p>
+        <p className="text-sm font-bold text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground/80">{sublabel}</p>
       </div>
     </div>
   );

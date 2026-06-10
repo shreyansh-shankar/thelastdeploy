@@ -7,45 +7,80 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ============================================
-     PRIMARY ACCENT — change only this one value
-     to test new brand colors across the whole app
-     ============================================ */
-  --accent-primary: #cbff5e;
-  --accent-primary-rgb: 203, 255, 94;
+  /* Dynamic Lime/Green primary accent for light mode */
+  --accent-primary: #16a34a; /* Emerald green for legibility on white */
+  --accent-primary-rgb: 22, 163, 74;
+
+  /* Topic card colors — light filled blocks */
+  --topic-docker:     #f0fdf4;
+  --topic-kubernetes: #faf5ff;
+  --topic-linux:      #fffbeb;
+  --topic-cicd:       #ecfeff;
+
+  --topic-docker-border:     #bbf7d0;
+  --topic-kubernetes-border: #e9d5ff;
+  --topic-linux-border:      #fde68a;
+  --topic-cicd-border:       #c5f6fa;
+
+  --topic-docker-text:     #166534;
+  --topic-kubernetes-text: #6b21a8;
+  --topic-linux-text:      #92400e;
+  --topic-cicd-text:       #075985;
+
+  /* Base theme - LIGHT MODE */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+  --input: #f1f5f9;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --primary: var(--accent-primary);
+  --primary-foreground: #ffffff;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --radius: 1rem;
+}
+
+.dark {
+  /* Green primary accent matching light mode */
+  --accent-primary: #16a34a;
+  --accent-primary-rgb: 22, 163, 74;
 
   /* Topic card colors — dark filled blocks */
-  --topic-docker:     #1a2744;
-  --topic-kubernetes: #1e1535;
-  --topic-linux:      #2a1a0e;
-  --topic-cicd:       #0e2228;
+  --topic-docker:     #121d33;
+  --topic-kubernetes: #160f28;
+  --topic-linux:      #241407;
+  --topic-cicd:       #061a1f;
 
-  --topic-docker-border:     #2d4a8a;
-  --topic-kubernetes-border: #4a2d8a;
-  --topic-linux-border:      #8a4a1a;
-  --topic-cicd-border:       #1a6a8a;
+  --topic-docker-border:     #1d3261;
+  --topic-kubernetes-border: #331d61;
+  --topic-linux-border:      #61320d;
+  --topic-cicd-border:       #0d4961;
 
-  --topic-docker-text:     #7eb8ff;
-  --topic-kubernetes-text: #b87eff;
-  --topic-linux-text:      #ffaa5e;
-  --topic-cicd-text:       #5edfff;
+  --topic-docker-text:     #93c5fd;
+  --topic-kubernetes-text: #c084fc;
+  --topic-linux-text:      #fdba74;
+  --topic-cicd-text:       #67e8f9;
 
-  /* Base theme */
-  --background: #0a0a0a;
-  --foreground: #f0f0f0;
-  --card: #111111;
-  --card-foreground: #f0f0f0;
-  --border: #222222;
-  --input: #1a1a1a;
-  --muted: #1a1a1a;
-  --muted-foreground: #888888;
+  /* Base theme - DARK MODE */
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #18181b;
+  --card-foreground: #f4f4f5;
+  --border: #27272a;
+  --input: #27272a;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
   --primary: var(--accent-primary);
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f0f0f0;
-  --destructive: #ff4444;
-  --destructive-foreground: #ffffff;
-  --radius: 0.75rem;
+  --primary-foreground: #09090b;
+  --secondary: #27272a;
+  --secondary-foreground: #f4f4f5;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #f4f4f5;
 }
 
 * {
@@ -57,21 +92,30 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Neon glow utility */
+/* Premium shadows & utilities */
 .neon-glow {
-  box-shadow: 0 0 20px rgba(var(--accent-primary-rgb), 0.3),
+  box-shadow: 0 0 20px rgba(var(--accent-primary-rgb), 0.15),
+              0 0 40px rgba(var(--accent-primary-rgb), 0.05);
+}
+
+.dark .neon-glow {
+  box-shadow: 0 0 20px rgba(var(--accent-primary-rgb), 0.25),
               0 0 40px rgba(var(--accent-primary-rgb), 0.1);
 }
 
 .neon-text {
   color: var(--accent-primary);
-  text-shadow: 0 0 20px rgba(var(--accent-primary-rgb), 0.5);
+}
+
+.dark .neon-text {
+  text-shadow: 0 0 15px rgba(var(--accent-primary-rgb), 0.4);
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--background); }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }

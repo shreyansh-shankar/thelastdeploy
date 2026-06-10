@@ -18,21 +18,21 @@ export default function ProfilePage() {
   if (loading || !user) return <LoadingSpinner className="py-40" />;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-black mb-2">Profile</h1>
-      <p className="text-[#555] mb-8">Your public profile information.</p>
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6 space-y-4">
+    <div className="max-w-2xl mx-auto px-4 py-12 transition-colors duration-300">
+      <h1 className="text-3xl font-black mb-2 text-foreground">Profile</h1>
+      <p className="text-muted-foreground mb-8">Your account information.</p>
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
         <div>
-          <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Username</p>
-          <p className="font-semibold">{user.username}</p>
+          <p className="text-xs text-muted-foreground/60 uppercase tracking-wider mb-1 font-semibold">Username</p>
+          <p className="font-semibold text-foreground">{user.username}</p>
         </div>
         <div>
-          <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Email</p>
-          <p className="font-semibold">{user.email}</p>
+          <p className="text-xs text-muted-foreground/60 uppercase tracking-wider mb-1 font-semibold">Email</p>
+          <p className="font-semibold text-foreground">{user.email}</p>
         </div>
         <div>
-          <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Total XP</p>
-          <p className="font-semibold font-mono" style={{ color: "var(--accent-primary)" }}>{user.xp} XP</p>
+          <p className="text-xs text-muted-foreground/60 uppercase tracking-wider mb-1 font-semibold">Total XP</p>
+          <p className="font-bold font-mono text-[var(--accent-primary)]">{user.xp} XP</p>
         </div>
       </div>
     </div>

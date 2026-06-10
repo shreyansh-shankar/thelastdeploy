@@ -18,11 +18,11 @@ export default function SettingsPage() {
   if (loading || !user) return <LoadingSpinner className="py-40" />;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-black mb-2">Settings</h1>
-      <p className="text-[#555] mb-8">Manage your account preferences.</p>
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6">
-        <p className="text-[#555] text-sm">More settings coming soon.</p>
+    <div className="max-w-2xl mx-auto px-4 py-12 transition-colors duration-300">
+      <h1 className="text-3xl font-black mb-2 text-foreground">Settings</h1>
+      <p className="text-muted-foreground mb-8">Manage your account preferences.</p>
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <p className="text-muted-foreground text-sm">More settings coming soon.</p>
       </div>
     </div>
   );

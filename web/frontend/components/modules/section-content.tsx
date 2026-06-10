@@ -1,10 +1,4 @@
 // web/frontend/components/modules/section-content.tsx
-//
-// The main reading area for a section. Handles:
-//  - Markdown rendering
-//  - Lab blocks
-//  - Scroll sentinel → triggers reading complete
-//  - Prev/Next navigation
 
 "use client";
 
@@ -103,8 +97,8 @@ export function SectionContent({
       {/* Section header */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-black">{section.title}</h2>
-          <p className="text-xs text-[#555] mt-1">
+          <h2 className="text-2xl font-black text-foreground">{section.title}</h2>
+          <p className="text-xs text-muted-foreground mt-1.5">
             {section.labs.length > 0
               ? `${section.labs.length} lab${section.labs.length !== 1 ? "s" : ""} · ${section.xp + section.labs.reduce((s, l) => s + l.xp, 0)} XP total`
               : `Reading · +${section.xp} XP`}
@@ -112,8 +106,7 @@ export function SectionContent({
         </div>
         {completed && (
           <div
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0"
-            style={{ color: "var(--accent-primary)", backgroundColor: "rgba(var(--accent-primary-rgb),0.1)" }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 bg-[rgba(var(--accent-primary-rgb),0.08)] border border-[rgba(var(--accent-primary-rgb),0.15)] text-[var(--accent-primary)]"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             Completed
@@ -123,18 +116,17 @@ export function SectionContent({
 
       {/* Markdown */}
       {section.content && (
-        <div className="prose prose-invert prose-sm max-w-none mb-10
-          prose-headings:font-black prose-headings:text-white
+        <div className="prose dark:prose-invert prose-sm max-w-none mb-10
+          prose-headings:font-black prose-headings:text-foreground
           prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
           prose-h3:text-base prose-h3:mt-6 prose-h3:mb-3
-          prose-p:text-[#aaa] prose-p:leading-relaxed
-          prose-strong:text-white prose-strong:font-bold
-          prose-code:text-[var(--accent-primary)] prose-code:bg-[#111] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
-          prose-pre:bg-[#0d0d0d] prose-pre:border prose-pre:border-[#2a2a2a] prose-pre:rounded-xl prose-pre:p-4
-          prose-blockquote:border-l-[var(--accent-primary)] prose-blockquote:text-[#666] prose-blockquote:bg-[#0d0d0d] prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-xl
-          prose-table:text-sm prose-th:text-[#888] prose-th:font-semibold prose-td:text-[#aaa]
-          prose-hr:border-[#1a1a1a] prose-li:text-[#aaa]
-          prose-a:text-[var(--accent-primary)] prose-a:no-underline hover:prose-a:underline">
+          prose-p:text-muted-foreground prose-p:leading-relaxed
+          prose-strong:text-foreground prose-strong:font-bold
+          prose-code:text-[var(--accent-primary)] prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+          prose-pre:bg-card prose-pre:border prose-pre:border-border prose-pre:rounded-xl prose-pre:p-4
+          prose-blockquote:border-l-[var(--accent-primary)] prose-blockquote:text-muted-foreground prose-blockquote:bg-muted/50 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-xl
+          prose-table:text-sm prose-th:text-muted-foreground prose-th:font-semibold prose-td:text-muted-foreground/95
+          prose-hr:border-border prose-li:text-muted-foreground prose-a:text-[var(--accent-primary)] prose-a:no-underline hover:prose-a:underline">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{section.content}</ReactMarkdown>
         </div>
       )}
@@ -143,12 +135,12 @@ export function SectionContent({
       {section.labs.length > 0 && (
         <div className="space-y-4 mb-8">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm uppercase tracking-widest text-[#888]">Labs</h3>
+            <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground/60">Labs</h3>
             {isLoggedIn && (
               <button
                 onClick={onRefresh}
                 disabled={refreshing}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#2a2a2a] text-[#666] hover:text-white hover:border-[#444] transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted hover:border-muted-foreground/40 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
                 {refreshing ? "Checking..." : "Refresh Progress"}
@@ -165,11 +157,11 @@ export function SectionContent({
       <div ref={sentinelRef} className="h-1" />
 
       {/* Prev / Next navigation */}
-      <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#1a1a1a]">
+      <div className="flex items-center justify-between mt-10 pt-6 border-t border-border">
         {prevSection ? (
           <button
             onClick={() => onNavigate(prevSection)}
-            className="flex items-center gap-2 text-sm text-[#666] hover:text-white transition-colors"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
             Previous
@@ -179,16 +171,14 @@ export function SectionContent({
         {nextSection ? (
           <button
             onClick={() => onNavigate(nextSection)}
-            className="flex items-center gap-2 text-sm font-semibold hover:opacity-80"
-            style={{ color: "var(--accent-primary)" }}
+            className="flex items-center gap-2 text-sm font-semibold hover:opacity-85 transition-opacity cursor-pointer text-[var(--accent-primary)]"
           >
             Next Section <ChevronRight className="h-4 w-4" />
           </button>
         ) : (
           <Link
             href="/modules"
-            className="flex items-center gap-2 text-sm font-semibold hover:opacity-80"
-            style={{ color: "var(--accent-primary)" }}
+            className="flex items-center gap-2 text-sm font-semibold hover:opacity-85 transition-opacity cursor-pointer text-[var(--accent-primary)]"
           >
             Back to Modules <ChevronRight className="h-4 w-4" />
           </Link>

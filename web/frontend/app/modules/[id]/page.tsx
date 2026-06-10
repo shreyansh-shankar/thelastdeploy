@@ -116,42 +116,42 @@ export default function ModuleDetailPage() {
     : 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[calc(100vh-64px)] transition-colors duration-300">
 
       {/* Header bar */}
-      <div className="border-b border-[#1a1a1a] px-4 py-4 flex items-center justify-between gap-4 shrink-0 bg-[#0a0a0a]">
+      <div className="border-b border-border px-4 py-4 flex items-center justify-between gap-4 shrink-0 bg-card">
         <div className="flex items-center gap-4 min-w-0">
           <Link
             href="/modules"
-            className="flex items-center gap-1.5 text-sm text-[#666] hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:block">Modules</span>
           </Link>
-          <div className="w-px h-4 bg-[#2a2a2a]" />
+          <div className="w-px h-4 bg-border" />
           <div className="flex items-center gap-2 min-w-0">
             <span
-              className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg shrink-0"
-              style={{ color: topic.color, backgroundColor: "rgba(0,0,0,0.5)", border: `1px solid ${topic.border}` }}
+              className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg shrink-0"
+              style={{ color: topic.color, backgroundColor: "rgba(var(--accent-primary-rgb),0.06)", border: `1px solid ${topic.border}` }}
             >
               {topic.label}
             </span>
-            <h1 className="font-black text-base truncate">{module.title}</h1>
+            <h1 className="font-black text-base truncate text-foreground">{module.title}</h1>
           </div>
         </div>
 
         <div className="flex items-center gap-4 shrink-0">
           <DifficultyBadge difficulty={module.difficulty} />
           <div className="hidden sm:flex items-center gap-2">
-            <div className="w-24 h-1.5 rounded-full bg-[#1a1a1a] overflow-hidden">
+            <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
                 style={{ width: `${progressPct}%`, backgroundColor: "var(--accent-primary)" }}
               />
             </div>
-            <span className="text-xs font-mono text-[#555]">{completedCount}/{module.sections.length}</span>
+            <span className="text-xs font-mono text-muted-foreground">{completedCount}/{module.sections.length}</span>
           </div>
-          <div className="flex items-center gap-1 font-mono text-xs font-bold" style={{ color: "var(--accent-primary)" }}>
+          <div className="flex items-center gap-1 font-mono text-xs font-bold text-[var(--accent-primary)]">
             <Zap className="h-3.5 w-3.5" />
             {module.total_xp} XP
           </div>
@@ -167,7 +167,7 @@ export default function ModuleDetailPage() {
           isSectionComplete={isSectionComplete}
         />
 
-        <main ref={contentRef} className="flex-1 overflow-y-auto bg-[#0a0a0a]">
+        <main ref={contentRef} className="flex-1 overflow-y-auto bg-background/50">
           {activeSection ? (
             <SectionContent
               section={activeSection}
@@ -180,7 +180,7 @@ export default function ModuleDetailPage() {
               refreshing={refreshing}
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-[#555] text-sm">
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
               Select a section to begin
             </div>
           )}

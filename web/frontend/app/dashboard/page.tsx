@@ -61,10 +61,9 @@ export default function DashboardPage() {
 
       {/* Top banner */}
       <div
-        className="rounded-2xl border p-8 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+        className="rounded-2xl border p-8 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-card border-border shadow-sm"
         style={{
-          background: `linear-gradient(135deg, rgba(var(--accent-primary-rgb),0.08) 0%, rgba(0,0,0,0) 60%)`,
-          borderColor: "rgba(var(--accent-primary-rgb), 0.15)",
+          background: `linear-gradient(135deg, rgba(var(--accent-primary-rgb),0.06) 0%, rgba(0,0,0,0) 60%)`,
         }}
       >
         <div className="flex items-center gap-5">
@@ -75,7 +74,7 @@ export default function DashboardPage() {
           </Avatar>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-black">{user.username}</h1>
+              <h1 className="text-2xl font-black text-foreground">{user.username}</h1>
               <span
                 className="text-xs font-bold px-2 py-0.5 rounded-full border"
                 style={{ color: rank.color, borderColor: `${rank.color}40`, backgroundColor: `${rank.color}15` }}
@@ -83,68 +82,68 @@ export default function DashboardPage() {
                 {rank.label}
               </span>
             </div>
-            <p className="text-[#555] text-sm">{user.email}</p>
+            <p className="text-muted-foreground text-sm">{user.email}</p>
             {nextRank && (
-              <p className="text-xs text-[#555] mt-1">
-                <span style={{ color: rank.color }}>{xpProgress.needed - xpProgress.current} XP</span>
-                {" "}to reach <span style={{ color: nextRank.color }}>{nextRank.label}</span>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span style={{ color: rank.color }} className="font-bold">{xpProgress.needed - xpProgress.current} XP</span>
+                {" "}to reach <span style={{ color: nextRank.color }} className="font-bold">{nextRank.label}</span>
               </p>
             )}
           </div>
         </div>
 
         <div className="w-full sm:w-64">
-          <div className="flex justify-between text-xs text-[#555] mb-2">
+          <div className="flex justify-between text-xs text-muted-foreground mb-2">
             <span>Rank Progress</span>
-            <span className="font-mono" style={{ color: rank.color }}>
+            <span className="font-mono font-bold" style={{ color: rank.color }}>
               {xpProgress.current} / {xpProgress.needed || "MAX"}
             </span>
           </div>
-          <div className="h-2 rounded-full bg-[#1a1a1a] overflow-hidden">
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${xpProgress.pct}%`, backgroundColor: rank.color, boxShadow: `0 0 8px ${rank.color}80` }}
+              style={{ width: `${xpProgress.pct}%`, backgroundColor: rank.color, boxShadow: `0 0 8px ${rank.color}60` }}
             />
           </div>
-          <p className="text-[10px] text-[#444] mt-1">{rank.description}</p>
+          <p className="text-[10px] text-muted-foreground/60 mt-1.5">{rank.description}</p>
         </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-5">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <Zap className="h-4 w-4" style={{ color: "var(--accent-primary)" }} />
-            <span className="text-xs text-[#555] font-semibold uppercase tracking-wider">Total XP</span>
+            <Zap className="h-4 w-4 text-[var(--accent-primary)]" />
+            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Total XP</span>
           </div>
-          <p className="text-3xl font-black font-mono" style={{ color: "var(--accent-primary)" }}>{user.xp}</p>
+          <p className="text-3xl font-black font-mono text-[var(--accent-primary)]">{user.xp}</p>
         </div>
 
-        <div className="rounded-2xl border p-5" style={{ backgroundColor: "var(--topic-linux)", borderColor: "var(--topic-linux-border)" }}>
+        <div className="rounded-2xl border p-5 shadow-sm" style={{ backgroundColor: "var(--topic-linux)", borderColor: "var(--topic-linux-border)" }}>
           <div className="flex items-center gap-2 mb-3">
             <Flame className="h-4 w-4" style={{ color: "var(--topic-linux-text)" }} />
-            <span className="text-xs text-[#555] font-semibold uppercase tracking-wider">Streak</span>
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--topic-linux-text)" }}>Streak</span>
           </div>
           <p className="text-3xl font-black font-mono" style={{ color: "var(--topic-linux-text)" }}>
-            {user.streak_days}<span className="text-sm font-normal text-[#666] ml-1">days</span>
+            {user.streak_days}<span className="text-sm font-normal opacity-60 ml-1">days</span>
           </p>
         </div>
 
-        <div className="rounded-2xl border p-5" style={{ backgroundColor: "var(--topic-kubernetes)", borderColor: "var(--topic-kubernetes-border)" }}>
+        <div className="rounded-2xl border p-5 shadow-sm" style={{ backgroundColor: "var(--topic-kubernetes)", borderColor: "var(--topic-kubernetes-border)" }}>
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="h-4 w-4" style={{ color: "var(--topic-kubernetes-text)" }} />
-            <span className="text-xs text-[#555] font-semibold uppercase tracking-wider">Completed</span>
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--topic-kubernetes-text)" }}>Completed</span>
           </div>
           <p className="text-3xl font-black font-mono" style={{ color: "var(--topic-kubernetes-text)" }}>
             {completedModules.length}
-            <span className="text-sm font-normal text-[#666] ml-1">modules</span>
+            <span className="text-sm font-normal opacity-60 ml-1">modules</span>
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-5">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <Trophy className="h-4 w-4" style={{ color: rank.color }} />
-            <span className="text-xs text-[#555] font-semibold uppercase tracking-wider">Rank</span>
+            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Rank</span>
           </div>
           <p className="text-xl font-black" style={{ color: rank.color }}>{rank.label}</p>
         </div>
@@ -155,8 +154,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 flex flex-col gap-6">
 
           {/* Progress rings */}
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6">
-            <h2 className="font-black text-lg mb-6">Progress Overview</h2>
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="font-black text-lg mb-6 text-foreground">Progress Overview</h2>
             <div className="flex flex-wrap items-center justify-around gap-8">
               <ActivityRing
                 value={completedModules.length}
@@ -183,19 +182,19 @@ export default function DashboardPage() {
           </div>
 
           {/* Modules progress */}
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-black text-lg">Modules</h2>
-              <Link href="/modules" className="text-xs font-semibold flex items-center gap-1 hover:opacity-80" style={{ color: "var(--accent-primary)" }}>
+              <h2 className="font-black text-lg text-foreground">Modules</h2>
+              <Link href="/modules" className="text-xs font-bold flex items-center gap-1 hover:opacity-80 text-[var(--accent-primary)]">
                 Browse all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
 
             {completedModules.length === 0 && inProgressModules.length === 0 ? (
               <div className="text-center py-10">
-                <Terminal className="h-8 w-8 text-[#2a2a2a] mx-auto mb-3" />
-                <p className="text-[#555] text-sm">No modules started yet.</p>
-                <Link href="/modules" className="text-sm font-semibold mt-2 inline-block hover:opacity-80" style={{ color: "var(--accent-primary)" }}>
+                <Terminal className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">No modules started yet.</p>
+                <Link href="/modules" className="text-sm font-semibold mt-2 inline-block hover:opacity-80 text-[var(--accent-primary)]">
                   Start your first module →
                 </Link>
               </div>
@@ -204,17 +203,17 @@ export default function DashboardPage() {
                 {completedModules.map((m) => (
                   <Link key={m.id} href={`/modules/${m.id}`}>
                     <div
-                      className="flex items-center justify-between px-4 py-3 rounded-xl border transition-all hover:scale-[1.01]"
-                      style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.05)", borderColor: "rgba(var(--accent-primary-rgb),0.2)" }}
+                      className="flex items-center justify-between px-4 py-3 rounded-xl border transition-all hover:scale-[1.01] hover:border-[rgba(var(--accent-primary-rgb),0.3)] cursor-pointer"
+                      style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.03)", borderColor: "rgba(var(--accent-primary-rgb),0.15)" }}
                     >
                       <div className="flex items-center gap-3">
-                        <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "var(--accent-primary)" }} />
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-primary)]" />
                         <div>
-                          <p className="font-bold text-sm text-white">{m.title}</p>
-                          <p className="text-xs text-[#555] mt-0.5">{m.sections.length} sections · {m.total_xp} XP earned</p>
+                          <p className="font-bold text-sm text-foreground">{m.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{m.sections.length} sections · {m.total_xp} XP earned</p>
                         </div>
                       </div>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: "var(--accent-primary)", backgroundColor: "rgba(var(--accent-primary-rgb),0.1)" }}>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0 bg-[rgba(var(--accent-primary-rgb),0.08)] text-[var(--accent-primary)] border border-[rgba(var(--accent-primary-rgb),0.15)]">
                         Complete
                       </span>
                     </div>
@@ -236,22 +235,22 @@ export default function DashboardPage() {
 
                   return (
                     <Link key={m.id} href={`/modules/${m.id}`}>
-                      <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-[#2a2a2a] bg-[#111] transition-all hover:scale-[1.01] hover:border-[#3a3a3a]">
+                      <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-muted/20 transition-all hover:scale-[1.01] hover:bg-muted/40 cursor-pointer">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-5 h-5 rounded-full border-2 border-[#3a3a3a] shrink-0 flex items-center justify-center">
-                            <div className="w-2 h-2 rounded-full bg-[#3a3a3a]" />
+                          <div className="w-5 h-5 rounded-full border-2 border-border shrink-0 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-sm text-white truncate">{m.title}</p>
+                            <p className="font-bold text-sm text-foreground truncate">{m.title}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              <div className="w-20 h-1 rounded-full bg-[#1a1a1a] overflow-hidden">
+                              <div className="w-20 h-1 rounded-full bg-muted overflow-hidden">
                                 <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "var(--accent-primary)" }} />
                               </div>
-                              <span className="text-xs text-[#555] font-mono">{done}/{allItems.length} completed</span>
+                              <span className="text-xs text-muted-foreground font-mono">{done}/{allItems.length} completed</span>
                             </div>
                           </div>
                         </div>
-                        <span className="text-xs text-[#555] shrink-0 ml-3">{pct}%</span>
+                        <span className="text-xs text-muted-foreground shrink-0 ml-3 font-semibold">{pct}%</span>
                       </div>
                     </Link>
                   );
@@ -262,8 +261,8 @@ export default function DashboardPage() {
 
           {/* Completed labs badges */}
           {user.completed_labs.length > 0 && (
-            <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6">
-              <h2 className="font-black text-lg mb-4">Completed Labs</h2>
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="font-black text-lg mb-4 text-foreground">Completed Labs</h2>
               <div className="flex flex-wrap gap-2">
                 {user.completed_labs.map((labId) => (
                   <SectionBadge key={labId} sectionId={labId} moduleId={labToModule[labId]} />
@@ -275,23 +274,23 @@ export default function DashboardPage() {
 
         {/* Right column */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6">
-            <h2 className="font-black text-lg mb-4">Quick Actions</h2>
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="font-black text-lg mb-4 text-foreground">Quick Actions</h2>
             <div className="flex flex-col gap-2">
               {[
                 { label: "Browse Modules", href: "/modules" },
                 { label: "My Profile", href: "/profile" },
               ].map(({ label, href }) => (
-                <Link key={href} href={href} className="flex items-center justify-between px-4 py-3 rounded-xl border border-[#2a2a2a] bg-[#111] hover:bg-[#1a1a1a] hover:border-[#3a3a3a] transition-all group">
-                  <span className="text-sm font-semibold">{label}</span>
-                  <ArrowRight className="h-4 w-4 text-[#555] group-hover:text-white transition-colors" />
+                <Link key={href} href={href} className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-muted/30 hover:bg-muted/70 transition-all group cursor-pointer">
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </Link>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#0d0d0d] p-6">
-            <h2 className="font-black text-lg mb-4">Agent Reference</h2>
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="font-black text-lg mb-4 text-foreground">Agent Reference</h2>
             <div className="space-y-2 font-mono text-xs">
               {[
                 ["tld login", "Authenticate"],
@@ -300,9 +299,9 @@ export default function DashboardPage() {
                 ["tld check", "Validate & earn XP"],
                 ["tld status", "Show active lab"],
               ].map(([cmd, desc]) => (
-                <div key={cmd} className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-[#111] border border-[#1a1a1a]">
-                  <span style={{ color: "var(--accent-primary)" }}>{cmd}</span>
-                  <span className="text-[#555] text-[11px]">{desc}</span>
+                <div key={cmd} className="flex flex-col gap-1 p-2.5 rounded-lg bg-muted/40 border border-border/60">
+                  <span className="font-bold" style={{ color: "var(--accent-primary)" }}>{cmd}</span>
+                  <span className="text-muted-foreground text-[11px]">{desc}</span>
                 </div>
               ))}
             </div>

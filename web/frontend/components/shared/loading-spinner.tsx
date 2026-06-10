@@ -56,7 +56,7 @@ export function LoadingSpinner({ className }: { className?: string }) {
         />
 
         {/* Center pulsing core container */}
-        <div className="w-4 h-4 rounded-full bg-white animate-pulse shadow-[0_0_15px_#fff]" />
+        <div className="w-4 h-4 rounded-full bg-[var(--accent-primary)] animate-pulse shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.6)]" />
       </div>
 
       <div className="flex flex-col items-center gap-2">
@@ -64,9 +64,9 @@ export function LoadingSpinner({ className }: { className?: string }) {
           <span style={{ color: "var(--accent-primary)", animation: "glitch 2s infinite" }}>
             Loading
           </span>
-          <span className="text-white opacity-80">Environment</span>
+          <span className="text-foreground opacity-80">Environment</span>
         </div>
-        <div className="w-16 h-1 rounded-full bg-[#111] border border-[#222] overflow-hidden relative">
+        <div className="w-16 h-1 rounded-full bg-muted border border-border overflow-hidden relative">
           <div 
             className="absolute top-0 bottom-0 rounded-full"
             style={{

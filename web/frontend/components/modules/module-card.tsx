@@ -20,9 +20,9 @@ export function ModuleCard({ module }: { module: Module }) {
   const isCompleted = module.completed_sections === module.total_sections && module.total_sections > 0;
 
   return (
-    <Link href={`/modules/${module.id}`} className="group block h-full">
+    <Link href={`/modules/${module.id}`} className="group block h-full cursor-pointer">
       <div
-        className="h-full rounded-2xl border flex flex-col transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-xl overflow-hidden"
+        className="h-full rounded-2xl border flex flex-col transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-md overflow-hidden"
         style={{ backgroundColor: topic.bg, borderColor: topic.border }}
       >
         {/* Top */}
@@ -30,22 +30,22 @@ export function ModuleCard({ module }: { module: Module }) {
           <div className="flex items-start justify-between gap-2 mb-4">
             <div className="flex flex-wrap gap-2">
               <span
-                className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg"
-                style={{ color: topic.color, backgroundColor: "rgba(0,0,0,0.3)" }}
+                className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-black/10 dark:bg-black/30 border border-border/10"
+                style={{ color: topic.color }}
               >
                 {topic.label}
               </span>
               <DifficultyBadge difficulty={module.difficulty} />
             </div>
             {isCompleted && (
-              <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "var(--accent-primary)" }} />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-primary)]" />
             )}
           </div>
 
-          <h3 className="font-black text-lg text-white leading-snug mb-2 group-hover:text-[var(--accent-primary)] transition-colors">
+          <h3 className="font-black text-lg text-foreground leading-snug mb-2 group-hover:text-[var(--accent-primary)] transition-colors">
             {module.title}
           </h3>
-          <p className="text-sm text-[#aaa] line-clamp-2 leading-relaxed">
+          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
             {module.description}
           </p>
         </div>
@@ -53,11 +53,11 @@ export function ModuleCard({ module }: { module: Module }) {
         {/* Progress bar */}
         {module.completed_sections > 0 && (
           <div className="px-5 pb-3">
-            <div className="flex justify-between text-xs text-[#666] mb-1.5">
+            <div className="flex justify-between text-xs text-muted-foreground/85 mb-1.5 font-semibold">
               <span>{module.completed_sections}/{module.total_sections} sections</span>
               <span>{progressPct}%</span>
             </div>
-            <div className="h-1.5 rounded-full bg-black/30 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-black/10 dark:bg-black/30 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -70,12 +70,9 @@ export function ModuleCard({ module }: { module: Module }) {
         )}
 
         {/* Footer */}
-        <div
-          className="px-5 py-3 flex items-center justify-between border-t"
-          style={{ borderColor: "rgba(255,255,255,0.06)" }}
-        >
-          <div className="flex items-center gap-4 text-xs text-[#888]">
-            <span className="flex items-center gap-1 font-mono font-bold" style={{ color: "var(--accent-primary)" }}>
+        <div className="px-5 py-3 flex items-center justify-between border-t border-border/20">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 font-mono font-bold text-[var(--accent-primary)]">
               <Zap className="h-3.5 w-3.5" />
               {module.total_xp} XP
             </span>
@@ -83,11 +80,11 @@ export function ModuleCard({ module }: { module: Module }) {
               <Clock className="h-3.5 w-3.5" />
               {module.estimated_minutes} min
             </span>
-            <span className="text-[#555]">
+            <span className="hidden sm:inline">
               {module.total_sections} sections
             </span>
           </div>
-          <ChevronRight className="h-4 w-4 text-[#555] group-hover:text-white transition-colors" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
         </div>
       </div>
     </Link>

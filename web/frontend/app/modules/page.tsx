@@ -20,23 +20,23 @@ export default function ModulesPage() {
 
   return (
     <div>
-      <div className="border-b border-[#1a1a1a]">
+      <div className="border-b border-border bg-card/30">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div>
-              <h1 className="text-4xl font-black tracking-tight">Modules</h1>
-              <p className="mt-2 text-[#888] max-w-xl">
+              <h1 className="text-4xl font-black tracking-tight text-foreground">Modules</h1>
+              <p className="mt-2 text-muted-foreground max-w-xl">
                 Structured learning paths combining theory and hands-on practice.
                 No account needed to browse.
               </p>
             </div>
             {!loading && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#2a2a2a] bg-[#0d0d0d]">
-                <Zap className="h-4 w-4" style={{ color: "var(--accent-primary)" }} />
-                <span className="font-mono font-bold text-sm" style={{ color: "var(--accent-primary)" }}>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card shadow-sm">
+                <Zap className="h-4 w-4 text-[var(--accent-primary)]" />
+                <span className="font-mono font-bold text-sm text-[var(--accent-primary)]">
                   {modules.length}
                 </span>
-                <span className="text-[#555] text-sm">modules available</span>
+                <span className="text-muted-foreground text-sm">modules available</span>
               </div>
             )}
           </div>
@@ -46,15 +46,15 @@ export default function ModulesPage() {
               {topicStats.map(({ key, label, icon: Icon, bg, border, color }) => (
                 <div
                   key={key}
-                  className="rounded-xl border p-4 flex items-center gap-3"
+                  className="rounded-xl border p-4 flex items-center gap-3 shadow-sm hover:scale-[1.01] transition-transform duration-200"
                   style={{ backgroundColor: bg, borderColor: border }}
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(0,0,0,0.3)" }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-background/50 border border-border/10">
                     <Icon className="h-4 w-4" style={{ color }} />
                   </div>
                   <div>
                     <p className="text-xs font-bold" style={{ color }}>{label}</p>
-                    <p className="text-lg font-black text-white">{countByTopic(key)}</p>
+                    <p className="text-lg font-black text-foreground">{countByTopic(key)}</p>
                   </div>
                 </div>
               ))}
