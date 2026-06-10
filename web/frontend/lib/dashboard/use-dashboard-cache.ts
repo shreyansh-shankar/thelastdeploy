@@ -7,8 +7,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { User, ModuleDetail } from "@/lib/types";
+import { patchModulesMemoryCache } from "@/hooks/use-modules";
 
-const CACHE_KEY = "tld:dashboard:v1";
+const CACHE_KEY = "tld:dashboard:v2";
 
 export interface DashboardCache {
   user: User;
@@ -27,9 +28,14 @@ export function readCache(): DashboardCache | null {
   }
 }
 
+export const CACHE_EVENT = "tld:dashboard:updated";
+
 export function writeCache(data: DashboardCache): void {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(CACHE_EVENT));
+    }
   } catch {
     // localStorage quota exceeded — silently ignore
   }
@@ -37,6 +43,9 @@ export function writeCache(data: DashboardCache): void {
 
 export function clearDashboardCache(): void {
   localStorage.removeItem(CACHE_KEY);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CACHE_EVENT));
+  }
 }
 
 /**
@@ -109,44 +118,66 @@ export function useDashboardCache(): UseDashboardCacheReturn {
     })();
   }, []); // runs once on mount
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleUpdate = () => {
+      const cached = readCache();
+      if (cached) setData(cached);
+    };
+    window.addEventListener(CACHE_EVENT, handleUpdate);
+    return () => window.removeEventListener(CACHE_EVENT, handleUpdate);
+  }, []);
+
   // Instant local patch — updates state + localStorage atomically
   const patch = useCallback((partial: Partial<User>) => {
-    setData((prev) => {
-      if (!prev) return prev;
-      const updated: User = {
-        ...prev.user,
-        ...partial,
-        completed_labs: partial.completed_labs
-          ? [...new Set([...prev.user.completed_labs, ...partial.completed_labs])]
-          : prev.user.completed_labs,
-        completed_sections: partial.completed_sections
-          ? [...new Set([...prev.user.completed_sections, ...partial.completed_sections])]
-          : prev.user.completed_sections,
-      };
-      const next = { ...prev, user: updated };
-      writeCache(next);
-      return next;
-    });
+    const cached = readCache();
+    if (!cached) return;
+    const updated: User = {
+      ...cached.user,
+      ...partial,
+      completed_labs: partial.completed_labs
+        ? [...new Set([...cached.user.completed_labs, ...partial.completed_labs])]
+        : cached.user.completed_labs,
+      completed_sections: partial.completed_sections
+        ? [...new Set([...cached.user.completed_sections, ...partial.completed_sections])]
+        : cached.user.completed_sections,
+    };
+    writeCache({ ...cached, user: updated });
   }, []);
 
   return { data, loading, error, patch };
 }
 
-
-// ── Session modules cache patch ────────────────────────────────────────────
-// Updates completed_sections count on the modules list in sessionStorage
+// ── Memory modules cache patch ────────────────────────────────────────────
+// Updates completed_sections count on the modules list in memory
 // so modules page reflects progress without a backend call.
-
-const SESSION_MODULES_KEY = "tld:modules:v1";
 
 export function patchSessionModule(moduleId: string, completedSections: number): void {
   try {
-    const raw = sessionStorage.getItem(SESSION_MODULES_KEY);
-    if (!raw) return;
-    const modules = JSON.parse(raw);
-    const updated = modules.map((m: { id: string; completed_sections: number }) =>
-      m.id === moduleId ? { ...m, completed_sections: completedSections } : m
-    );
-    sessionStorage.setItem(SESSION_MODULES_KEY, JSON.stringify(updated));
+    patchModulesMemoryCache(moduleId, completedSections);
   } catch {}
+}
+
+export function updateDashboardCacheModule(updated: ModuleDetail): void {
+  const cache = readCache();
+  if (!cache) return;
+  const updatedModules = cache.modules.map((m) =>
+    m.id === updated.id ? updated : m
+  );
+  writeCache({ ...cache, modules: updatedModules });
+}
+
+export function patchDashboardCacheModuleSectionCompleted(moduleId: string, sectionId: string): void {
+  const cache = readCache();
+  if (!cache) return;
+  const updatedModules = cache.modules.map((m) => {
+    if (m.id === moduleId) {
+      const updatedSections = m.sections.map((s) =>
+        s.id === sectionId ? { ...s, section_completed: true } : s
+      );
+      return { ...m, sections: updatedSections };
+    }
+    return m;
+  });
+  writeCache({ ...cache, modules: updatedModules });
 }

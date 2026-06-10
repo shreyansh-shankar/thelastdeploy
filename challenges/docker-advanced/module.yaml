@@ -1,0 +1,9 @@
+id: docker-advanced
+title: "Docker Advanced"
+description: "Take the next step in Docker: build custom container images from scratch and manage networking."
+topic: docker
+difficulty: intermediate
+estimated_minutes: 25
+sections:
+  - id: 01-custom-images
+    order: 1

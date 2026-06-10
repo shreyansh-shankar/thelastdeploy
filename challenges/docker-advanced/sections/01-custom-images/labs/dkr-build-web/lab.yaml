@@ -1,0 +1,9 @@
+id: dkr-build-web
+title: "Build and run a custom web server"
+xp: 100
+estimated_minutes: 15
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f tld-my-web-app"
+    - "docker rmi -f my-web-app:latest"

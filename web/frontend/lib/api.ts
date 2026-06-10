@@ -2,6 +2,7 @@
 
 import { Module, ModuleDetail, User, LeaderboardEntry } from "./types";
 import { writeCache, clearDashboardCache } from "./dashboard/use-dashboard-cache";
+import { clearModulesMemoryCache } from "@/hooks/use-modules";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8742";
 
@@ -66,6 +67,7 @@ export const api = {
 
   logout: () => {
     clearDashboardCache();
+    clearModulesMemoryCache();
     localStorage.removeItem("token");
     localStorage.removeItem("device_key");
   },

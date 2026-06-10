@@ -1,0 +1,8 @@
+id: k8s-first-pod
+title: "Run your first Pod in Kind"
+xp: 80
+estimated_minutes: 15
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024

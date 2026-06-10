@@ -1,0 +1,11 @@
+id: linux-basics
+title: "Linux Basics"
+description: "Master filesystem navigation and core system commands like file operations and permissions configuration."
+topic: linux
+difficulty: beginner
+estimated_minutes: 20
+sections:
+  - id: 01-navigation
+    order: 1
+  - id: 02-file-permissions
+    order: 2

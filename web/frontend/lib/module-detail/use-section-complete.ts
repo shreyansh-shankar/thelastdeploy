@@ -1,7 +1,8 @@
 // web/frontend/lib/module-detail/use-section-complete.ts
 
 import { useCallback, useRef } from "react";
-import { patchCacheUser, readCache } from "@/lib/dashboard/use-dashboard-cache";
+import { patchCacheUser, readCache, patchDashboardCacheModuleSectionCompleted } from "@/lib/dashboard/use-dashboard-cache";
+import { patchModulesMemoryCache } from "@/hooks/use-modules";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8742";
 
@@ -36,6 +37,8 @@ export function useSectionComplete({ onComplete }: Options) {
         completed_sections: [sectionId],
         ...(optimisticXp !== undefined && { xp: optimisticXp }),
       });
+      patchModulesMemoryCache(moduleId, sectionId);
+      patchDashboardCacheModuleSectionCompleted(moduleId, sectionId);
 
       // 3. Background API call — confirms with backend's authoritative XP value
       try {

@@ -1,52 +1,80 @@
 // web/frontend/hooks/use-modules.ts
 //
-// Session-cached modules list.
-// - Same tab navigation → served from sessionStorage (no backend call)
-// - Manual reload / new tab → fetched fresh from backend
-// - Includes completed_sections progress from dashboard cache
+// Memory-cached modules list.
+// - Same tab navigation (client-side routing) → served from memory (no backend call)
+// - Manual reload / new tab → memory is cleared, fetched fresh from backend
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Module } from "@/lib/types";
-import { readCache } from "@/lib/dashboard/use-dashboard-cache";
+import { Module, ModuleDetail } from "@/lib/types";
 
-const SESSION_KEY = "tld:modules:v1";
+// In-memory cache surviving client-side navigation but not page reloads
+let memoryModulesCache: Module[] | null = null;
 
-function readSession(): Module[] | null {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as Module[];
-  } catch {
-    return null;
-  }
+export function clearModulesMemoryCache(): void {
+  memoryModulesCache = null;
 }
 
-function writeSession(modules: Module[]): void {
-  try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(modules));
-  } catch {}
+export function patchModulesMemoryCache(moduleId: string, completedSectionsOrSectionId: number | string): void {
+  if (!memoryModulesCache) return;
+  memoryModulesCache = memoryModulesCache.map((m) => {
+    if (m.id === moduleId) {
+      if (typeof completedSectionsOrSectionId === "number") {
+        return { ...m, completed_sections: completedSectionsOrSectionId };
+      } else {
+        const newCompleted = Math.min(m.completed_sections + 1, m.total_sections);
+        return { ...m, completed_sections: newCompleted };
+      }
+    }
+    return m;
+  });
+}
+
+export function updateModuleInMemoryCache(updated: ModuleDetail | Module): void {
+  if (!memoryModulesCache) return;
+  memoryModulesCache = memoryModulesCache.map((m) => {
+    if (m.id === updated.id) {
+      const completedSections = "sections" in updated
+        ? updated.sections.filter((s) =>
+            s.labs.length === 0
+              ? s.section_completed
+              : s.labs.every((l) => l.completed)
+          ).length
+        : updated.completed_sections;
+
+      return {
+        ...m,
+        title: updated.title,
+        description: updated.description,
+        topic: updated.topic,
+        difficulty: updated.difficulty,
+        estimated_minutes: updated.estimated_minutes,
+        tags: updated.tags,
+        total_xp: updated.total_xp,
+        total_sections: updated.total_sections,
+        completed_sections: completedSections,
+      };
+    }
+    return m;
+  });
 }
 
 export function useModules() {
-  const [modules, setModules] = useState<Module[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [modules, setModules] = useState<Module[]>(memoryModulesCache || []);
+  const [loading, setLoading] = useState(!memoryModulesCache);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const session = readSession();
-
-    if (session) {
-      // Session hit — use it, no backend call
-      setModules(session);
+    if (memoryModulesCache) {
+      setModules(memoryModulesCache);
       setLoading(false);
       return;
     }
 
-    // Session miss — fetch from backend, then cache in sessionStorage
+    setLoading(true);
     api.getModules()
       .then(({ modules }) => {
-        writeSession(modules);
+        memoryModulesCache = modules;
         setModules(modules);
       })
       .catch((e) => setError(e.message))

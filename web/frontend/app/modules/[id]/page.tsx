@@ -13,6 +13,8 @@ import { SectionSidebar } from "@/components/modules/section-sidebar";
 import { SectionContent } from "@/components/modules/section-content";
 import { CompletionToast } from "@/components/modules/completion-toast";
 import { useSectionComplete } from "@/lib/module-detail/use-section-complete";
+import { updateModuleInMemoryCache } from "@/hooks/use-modules";
+import { updateDashboardCacheModule } from "@/lib/dashboard/use-dashboard-cache";
 import { ArrowLeft, Zap } from "lucide-react";
 import Link from "next/link";
 
@@ -46,6 +48,8 @@ export default function ModuleDetailPage() {
     try {
       const data = await api.getModule(id);
       setModule(data);
+      updateModuleInMemoryCache(data);
+      updateDashboardCacheModule(data);
       setActiveSection((prev) =>
         prev ? data.sections.find((s) => s.id === prev.id) ?? data.sections[0] : data.sections[0] ?? null
       );

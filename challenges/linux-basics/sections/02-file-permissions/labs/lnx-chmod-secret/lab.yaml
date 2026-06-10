@@ -1,0 +1,8 @@
+id: lnx-chmod-secret
+title: "Secure a sensitive secret file"
+xp: 60
+estimated_minutes: 10
+setup:
+  type: shell
+  seed_commands:
+    - "rm -f $HOME/secret-file.txt"

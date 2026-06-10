@@ -5,7 +5,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "./api";
 import { User } from "./types";
-import { readCache } from "./dashboard/use-dashboard-cache";
+import { readCache, writeCache, CACHE_EVENT } from "./dashboard/use-dashboard-cache";
 
 interface AuthContextType {
   user: User | null;
@@ -53,6 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleUpdate = () => {
+      const cache = readCache();
+      if (cache?.user) {
+        setUser(cache.user);
+      }
+    };
+    window.addEventListener(CACHE_EVENT, handleUpdate);
+    return () => window.removeEventListener(CACHE_EVENT, handleUpdate);
+  }, []);
+
   const login = async (token: string, deviceKey?: string) => {
     localStorage.setItem("token", token);
     if (deviceKey) localStorage.setItem("device_key", deviceKey);
@@ -71,14 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshUser = async () => {
-    // Read from cache — no backend call unless cache is empty
-    const cache = readCache();
-    if (cache?.user) {
-      setUser(cache.user);
-      return;
-    }
     const token = localStorage.getItem("token");
-    if (token) await fetchUser();
+    if (!token) return;
+    try {
+      const me = await api.getMe();
+      setUser(me);
+      const cache = readCache();
+      if (cache) {
+        writeCache({ ...cache, user: me });
+      }
+    } catch {
+      // ignore
+    }
   };
 
   return (
