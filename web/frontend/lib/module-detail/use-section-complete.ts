@@ -1,7 +1,7 @@
 // web/frontend/lib/module-detail/use-section-complete.ts
 
 import { useCallback, useRef } from "react";
-import { patchCacheUser } from "@/lib/dashboard/use-dashboard-cache";
+import { patchCacheUser, readCache } from "@/lib/dashboard/use-dashboard-cache";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8742";
 
@@ -25,16 +25,19 @@ export function useSectionComplete({ onComplete }: Options) {
       const token = getToken();
       if (!token) return;
 
-      // 1. Instant UI update
+      // 1. Instant UI update + optimistic cache patch (section id + xp)
       onComplete(sectionId, sectionXp);
 
-      // 2. Patch localStorage cache immediately — persists across tabs/refresh
+      // 2. Optimistic cache update — add section to completed + add xp immediately
+      //    This persists even if browser closes before API responds
+      const cache = readCache();
+      const optimisticXp = cache ? cache.user.xp + sectionXp : undefined;
       patchCacheUser({
         completed_sections: [sectionId],
-        xp: undefined, // xp will be updated from API response below
+        ...(optimisticXp !== undefined && { xp: optimisticXp }),
       });
 
-      // 3. Background API call
+      // 3. Background API call — confirms with backend's authoritative XP value
       try {
         const res = await fetch(
           `${API_BASE}/modules/${moduleId}/sections/${sectionId}/complete`,
@@ -48,7 +51,7 @@ export function useSectionComplete({ onComplete }: Options) {
         );
         if (res.ok) {
           const { total_xp } = await res.json();
-          // Update XP in cache with confirmed value from backend
+          // Overwrite with backend's confirmed total (handles edge cases like double-completion)
           patchCacheUser({ xp: total_xp });
         }
       } catch {

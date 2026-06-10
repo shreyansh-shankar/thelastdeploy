@@ -49,8 +49,9 @@ export function patchCacheUser(partial: Partial<User>): void {
 
   const updated: User = {
     ...cache.user,
-    ...partial,
-    // Merge arrays — deduplicate
+    // xp: use provided value if given, else keep existing
+    xp: partial.xp !== undefined ? partial.xp : cache.user.xp,
+    // Merge arrays — append new items, deduplicate
     completed_labs: partial.completed_labs
       ? [...new Set([...cache.user.completed_labs, ...partial.completed_labs])]
       : cache.user.completed_labs,
@@ -129,4 +130,23 @@ export function useDashboardCache(): UseDashboardCacheReturn {
   }, []);
 
   return { data, loading, error, patch };
+}
+
+
+// ── Session modules cache patch ────────────────────────────────────────────
+// Updates completed_sections count on the modules list in sessionStorage
+// so modules page reflects progress without a backend call.
+
+const SESSION_MODULES_KEY = "tld:modules:v1";
+
+export function patchSessionModule(moduleId: string, completedSections: number): void {
+  try {
+    const raw = sessionStorage.getItem(SESSION_MODULES_KEY);
+    if (!raw) return;
+    const modules = JSON.parse(raw);
+    const updated = modules.map((m: { id: string; completed_sections: number }) =>
+      m.id === moduleId ? { ...m, completed_sections: completedSections } : m
+    );
+    sessionStorage.setItem(SESSION_MODULES_KEY, JSON.stringify(updated));
+  } catch {}
 }
