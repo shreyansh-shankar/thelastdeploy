@@ -1,6 +1,7 @@
 // web/frontend/lib/api.ts
 
 import { Module, ModuleDetail, User, LeaderboardEntry } from "./types";
+import { writeCache, clearDashboardCache } from "./dashboard/use-dashboard-cache";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8742";
 
@@ -25,29 +26,57 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+/** After login/register — fetch everything needed and warm the cache. */
+async function warmCache(token: string): Promise<void> {
+  try {
+    // Temporarily set token so request() can use it
+    localStorage.setItem("token", token);
+    const [user, { modules: list }] = await Promise.all([
+      request<User>("/me"),
+      request<{ modules: Module[] }>("/modules"),
+    ]);
+    const modules = await Promise.all(
+      list.map((m) => request<ModuleDetail>(`/modules/${m.id}/full`))
+    );
+    writeCache({ user, modules });
+  } catch {
+    // Non-fatal — dashboard will fetch on next load
+  }
+}
+
 export const api = {
   // Auth
-  register: (email: string, username: string, password: string) =>
-    request<{ access_token: string; device_key: string }>("/register", {
+  register: async (email: string, username: string, password: string) => {
+    const res = await request<{ access_token: string; device_key: string }>("/register", {
       method: "POST",
       body: JSON.stringify({ email, username, password }),
-    }),
+    });
+    await warmCache(res.access_token);
+    return res;
+  },
 
-  login: (email: string, password: string) =>
-    request<{ access_token: string; device_key: string }>("/login", {
+  login: async (email: string, password: string) => {
+    const res = await request<{ access_token: string; device_key: string }>("/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    }),
+    });
+    await warmCache(res.access_token);
+    return res;
+  },
+
+  logout: () => {
+    clearDashboardCache();
+    localStorage.removeItem("token");
+    localStorage.removeItem("device_key");
+  },
 
   // Modules
   getModules: () =>
     request<{ modules: Module[] }>("/modules"),
 
-  // Full detail with sections + labs (for module detail page)
   getModule: (id: string) =>
     request<ModuleDetail>(`/modules/${id}/full`),
 
-  // Mark a reading section (no labs) complete — triggered on scroll-to-end
   completeSection: (moduleId: string, sectionId: string) =>
     request<{ xp_awarded: number; total_xp: number }>(
       `/modules/${moduleId}/sections/${sectionId}/complete`,

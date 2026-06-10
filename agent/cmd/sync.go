@@ -41,7 +41,7 @@ func runSync(args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	tldkDir := filepath.Dir(cfg.DeviceKeyPath)
+	tldDir := filepath.Dir(cfg.DeviceKeyPath)
 
 	apiReachable := drainQueue(cfg.APIBaseURL, cfg.AuthToken, tldDir)
 

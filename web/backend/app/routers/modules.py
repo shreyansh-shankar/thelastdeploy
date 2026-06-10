@@ -239,12 +239,25 @@ async def complete_reading_section(
     if not section:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
 
+    # For lab sections — verify all labs are actually completed before awarding
     lab_check = await db.execute(select(Lab).where(Lab.section_id == section_id))
-    if lab_check.scalars().all():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Sections with labs are completed via tld check",
+    labs = lab_check.scalars().all()
+    if labs:
+        # Check all labs are completed for this user
+        completed_labs = await db.execute(
+            select(LabProgress.lab_id).where(
+                LabProgress.user_id == current_user.id,
+                LabProgress.section_id == section_id,
+                LabProgress.completed == True,
+            )
         )
+        completed_lab_ids = {row[0] for row in completed_labs.fetchall()}
+        all_lab_ids = {l.id for l in labs}
+        if not all_lab_ids.issubset(completed_lab_ids):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Complete all labs in this section first",
+            )
 
     prog_result = await db.execute(
         select(SectionProgress).where(
@@ -257,7 +270,7 @@ async def complete_reading_section(
     if existing and existing.completed:
         return CompleteSectionResponse(xp_awarded=0, total_xp=current_user.xp)
 
-    xp = section.xp  # use xp from section.yaml, not hardcoded
+    xp = section.xp  # reading XP from section.yaml (labs XP already awarded separately)
     current_user.xp += xp
     db.add(current_user)
 

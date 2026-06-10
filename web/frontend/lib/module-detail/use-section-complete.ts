@@ -1,6 +1,7 @@
 // web/frontend/lib/module-detail/use-section-complete.ts
 
 import { useCallback, useRef } from "react";
+import { patchCacheUser } from "@/lib/dashboard/use-dashboard-cache";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8742";
 
@@ -10,7 +11,6 @@ function getToken(): string | null {
 }
 
 interface Options {
-  // Called instantly (optimistic) with section's own xp value
   onComplete: (sectionId: string, xpAwarded: number) => void;
 }
 
@@ -25,20 +25,34 @@ export function useSectionComplete({ onComplete }: Options) {
       const token = getToken();
       if (!token) return;
 
-      const url = `${API_BASE}/modules/${moduleId}/sections/${sectionId}/complete`;
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      // 1. Instant optimistic update with the section's own XP
+      // 1. Instant UI update
       onComplete(sectionId, sectionXp);
 
-      // 2. Background fetch
+      // 2. Patch localStorage cache immediately — persists across tabs/refresh
+      patchCacheUser({
+        completed_sections: [sectionId],
+        xp: undefined, // xp will be updated from API response below
+      });
+
+      // 3. Background API call
       try {
-        await fetch(url, { method: "POST", headers });
+        const res = await fetch(
+          `${API_BASE}/modules/${moduleId}/sections/${sectionId}/complete`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (res.ok) {
+          const { total_xp } = await res.json();
+          // Update XP in cache with confirmed value from backend
+          patchCacheUser({ xp: total_xp });
+        }
       } catch {
-        // 3. sendBeacon fallback if tab closes mid-request
+        // sendBeacon fallback for tab-close scenario
         if (typeof navigator !== "undefined" && navigator.sendBeacon) {
           const blob = new Blob(
             [JSON.stringify({ token, module_id: moduleId, section_id: sectionId })],

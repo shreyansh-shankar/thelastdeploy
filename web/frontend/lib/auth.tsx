@@ -5,6 +5,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "./api";
 import { User } from "./types";
+import { readCache } from "./dashboard/use-dashboard-cache";
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +29,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = async () => {
     try {
+      // Try cache first — avoids an extra /me call on every page load
+      const cache = readCache();
+      if (cache?.user) {
+        setUser(cache.user);
+        return;
+      }
       const me = await api.getMe();
       setUser(me);
     } catch {
@@ -49,16 +56,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (token: string, deviceKey?: string) => {
     localStorage.setItem("token", token);
     if (deviceKey) localStorage.setItem("device_key", deviceKey);
-    await fetchUser();
+    // Cache was already warmed by api.login() — just read from it
+    const cache = readCache();
+    if (cache?.user) {
+      setUser(cache.user);
+    } else {
+      await fetchUser();
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("device_key");
+    api.logout(); // clears token, device_key, and dashboard cache
     setUser(null);
   };
 
   const refreshUser = async () => {
+    // Read from cache — no backend call unless cache is empty
+    const cache = readCache();
+    if (cache?.user) {
+      setUser(cache.user);
+      return;
+    }
     const token = localStorage.getItem("token");
     if (token) await fetchUser();
   };

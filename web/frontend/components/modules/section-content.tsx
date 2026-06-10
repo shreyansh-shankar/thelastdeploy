@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { Section, ModuleDetail } from "@/lib/types";
 import { LabBlock } from "./lab-block";
 import { CheckCircle2, ArrowLeft, ChevronRight, RefreshCw } from "lucide-react";
@@ -39,22 +39,46 @@ export function SectionContent({
 }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const firedRef = useRef(false);
+  const scrolledToBottomRef = useRef(false); // remembers if user scrolled to bottom
 
-  // Reset fired flag when section changes
+  // Reset both flags when switching sections
   useEffect(() => {
     firedRef.current = false;
+    scrolledToBottomRef.current = false;
   }, [section.id]);
 
-  // Intersection observer for scroll-to-end detection
+  // Attempt completion — called whenever scroll or labs state changes
+  const tryComplete = useCallback(() => {
+    if (!isLoggedIn) return;
+    if (isSectionComplete(section)) return;
+    if (firedRef.current) return;
+    if (!scrolledToBottomRef.current) return; // haven't scrolled down yet
+
+    if (section.labs.length === 0) {
+      // Pure reading — scroll is enough
+      firedRef.current = true;
+      onScrollComplete(section.id, section.xp);
+    } else {
+      // Lab section — need all labs done too
+      const allLabsDone = section.labs.every((l) => l.completed);
+      if (allLabsDone) {
+        firedRef.current = true;
+        onScrollComplete(section.id, section.xp);
+      }
+      // else: wait — user will hit Refresh after finishing lab
+    }
+  }, [section, isLoggedIn, isSectionComplete, onScrollComplete]);
+
+  // Intersection observer — just records that user scrolled to bottom
   useEffect(() => {
-    if (!isLoggedIn || section.labs.length > 0 || !sentinelRef.current) return;
-    if (isSectionComplete(section)) return; // already done
+    if (!isLoggedIn || !sentinelRef.current) return;
+    if (isSectionComplete(section)) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !firedRef.current) {
-          firedRef.current = true;
-          onScrollComplete(section.id, section.xp);
+        if (entry.isIntersecting && !scrolledToBottomRef.current) {
+          scrolledToBottomRef.current = true;
+          tryComplete();
         }
       },
       { threshold: 1.0 }
@@ -62,7 +86,12 @@ export function SectionContent({
 
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [section.id, isLoggedIn, isSectionComplete, onScrollComplete]);
+  }, [section.id, isLoggedIn, isSectionComplete, tryComplete]);
+
+  // Re-attempt when labs update (user hit Refresh after finishing lab)
+  useEffect(() => {
+    tryComplete();
+  }, [section.labs, tryComplete]);
 
   const completed = isSectionComplete(section);
   const prevSection = module.sections.find((s) => s.order === section.order - 1);
@@ -132,8 +161,8 @@ export function SectionContent({
         </div>
       )}
 
-      {/* Scroll sentinel — for reading sections only */}
-      {section.labs.length === 0 && <div ref={sentinelRef} className="h-1" />}
+      {/* Scroll sentinel — always present; fires only when conditions met */}
+      <div ref={sentinelRef} className="h-1" />
 
       {/* Prev / Next navigation */}
       <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#1a1a1a]">
