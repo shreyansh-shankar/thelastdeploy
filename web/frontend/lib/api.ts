@@ -1,6 +1,6 @@
 // web/frontend/lib/api.ts
 
-import { Module, ModuleDetail, User, LeaderboardEntry } from "./types";
+import { Module, ModuleDetail, User } from "./types";
 import { writeCache, clearDashboardCache } from "./dashboard/use-dashboard-cache";
 import { clearModulesMemoryCache } from "@/hooks/use-modules";
 
@@ -87,7 +87,4 @@ export const api = {
 
   // Users
   getMe: () => request<User>("/me"),
-
-  getLeaderboard: () =>
-    request<{ leaderboard: LeaderboardEntry[] }>("/leaderboard"),
 };

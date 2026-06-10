@@ -9,40 +9,30 @@ import { api } from "@/lib/api";
 import { User, ModuleDetail } from "@/lib/types";
 import { patchModulesMemoryCache } from "@/hooks/use-modules";
 
-const CACHE_KEY = "tld:dashboard:v4";
+let memoryDashboardCache: DashboardCache | null = null;
 
 export interface DashboardCache {
   user: User;
   modules: ModuleDetail[];
 }
 
-// ── Raw localStorage helpers ───────────────────────────────────────────────
+// ── Raw in-memory helpers ──────────────────────────────────────────────────
 
 export function readCache(): DashboardCache | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as DashboardCache;
-  } catch {
-    return null;
-  }
+  return memoryDashboardCache;
 }
 
 export const CACHE_EVENT = "tld:dashboard:updated";
 
 export function writeCache(data: DashboardCache): void {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event(CACHE_EVENT));
-    }
-  } catch {
-    // localStorage quota exceeded — silently ignore
+  memoryDashboardCache = data;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CACHE_EVENT));
   }
 }
 
 export function clearDashboardCache(): void {
-  localStorage.removeItem(CACHE_KEY);
+  memoryDashboardCache = null;
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(CACHE_EVENT));
   }

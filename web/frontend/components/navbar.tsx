@@ -55,7 +55,6 @@ export function Navbar() {
         {/* Nav links */}
         <div className="hidden md:flex items-center gap-1">
           {navLink("/modules", "Modules")}
-          {navLink("/leaderboard", "Leaderboard")}
         </div>
 
         {/* Auth */}

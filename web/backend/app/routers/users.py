@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.dependencies import get_db, get_current_user
 from app.models import User, LabProgress, SectionProgress
-from app.schemas import MeResponse, LeaderboardEntry, LeaderboardResponse
+from app.schemas import MeResponse
 
 router = APIRouter()
 
@@ -63,27 +63,3 @@ async def get_me(
         completed_sections=completed_sections,
     )
 
-
-@router.get("/leaderboard", response_model=LeaderboardResponse)
-async def get_leaderboard(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(
-            User.id,
-            User.username,
-            User.xp,
-            func.count(LabProgress.id).label("completed"),
-        )
-        .outerjoin(
-            LabProgress,
-            (LabProgress.user_id == User.id) & (LabProgress.completed == True)
-        )
-        .group_by(User.id, User.username, User.xp)
-        .order_by(User.xp.desc())
-        .limit(50)
-    )
-    rows = result.fetchall()
-
-    return LeaderboardResponse(leaderboard=[
-        LeaderboardEntry(rank=i + 1, username=row.username, xp=row.xp, completed=row.completed)
-        for i, row in enumerate(rows)
-    ])

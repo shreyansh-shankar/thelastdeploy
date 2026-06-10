@@ -280,7 +280,6 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-2">
               {[
                 { label: "Browse Modules", href: "/modules" },
-                { label: "View Leaderboard", href: "/leaderboard" },
                 { label: "My Profile", href: "/profile" },
               ].map(({ label, href }) => (
                 <Link key={href} href={href} className="flex items-center justify-between px-4 py-3 rounded-xl border border-[#2a2a2a] bg-[#111] hover:bg-[#1a1a1a] hover:border-[#3a3a3a] transition-all group">

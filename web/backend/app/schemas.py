@@ -137,12 +137,3 @@ class MeResponse(BaseModel):
     streak_days: int
     completed_labs: list[str]       # lab IDs (from lab_progress)
     completed_sections: list[str]   # section IDs (from section_progress — reading/questions)
-
-class LeaderboardEntry(BaseModel):
-    rank: int
-    username: str
-    xp: int
-    completed: int
-
-class LeaderboardResponse(BaseModel):
-    leaderboard: list[LeaderboardEntry]

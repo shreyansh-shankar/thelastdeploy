@@ -53,10 +53,3 @@ export interface User {
   completed_labs: string[];      // lab IDs (tld check)
   completed_sections: string[];  // section IDs (reading / future: questions)
 }
-
-export interface LeaderboardEntry {
-  rank: number;
-  username: string;
-  xp: number;
-  completed: number;
-}
