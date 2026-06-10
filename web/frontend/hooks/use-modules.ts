@@ -35,11 +35,7 @@ export function updateModuleInMemoryCache(updated: ModuleDetail | Module): void 
   memoryModulesCache = memoryModulesCache.map((m) => {
     if (m.id === updated.id) {
       const completedSections = "sections" in updated
-        ? updated.sections.filter((s) =>
-            s.labs.length === 0
-              ? s.section_completed
-              : s.labs.every((l) => l.completed)
-          ).length
+        ? updated.sections.filter((s) => s.section_completed).length
         : updated.completed_sections;
 
       return {

@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.dependencies import get_db, get_current_user, get_optional_user
 from app.models import Lab, LabProgress, Module, Section, SectionProgress, User
 from app.schemas import (
@@ -46,15 +46,6 @@ async def list_modules(
 
         completed_sections = 0
         if current_user:
-            lab_prog_result = await db.execute(
-                select(LabProgress.lab_id).where(
-                    LabProgress.user_id == current_user.id,
-                    LabProgress.module_id == m.id,
-                    LabProgress.completed == True,
-                )
-            )
-            completed_lab_ids = {row[0] for row in lab_prog_result.fetchall()}
-
             sec_prog_result = await db.execute(
                 select(SectionProgress.section_id).where(
                     SectionProgress.user_id == current_user.id,
@@ -65,13 +56,8 @@ async def list_modules(
             completed_section_ids = {row[0] for row in sec_prog_result.fetchall()}
 
             for section in sections:
-                section_labs = [l for l in labs if l.section_id == section.id]
-                if not section_labs:
-                    if section.id in completed_section_ids:
-                        completed_sections += 1
-                else:
-                    if {l.id for l in section_labs}.issubset(completed_lab_ids):
-                        completed_sections += 1
+                if section.id in completed_section_ids:
+                    completed_sections += 1
 
         tags = [t.strip() for t in (m.tags or "").split(",") if t.strip()]
         items.append(ModuleListItem(
@@ -271,8 +257,6 @@ async def complete_reading_section(
         return CompleteSectionResponse(xp_awarded=0, total_xp=current_user.xp)
 
     xp = section.xp  # reading XP from section.yaml (labs XP already awarded separately)
-    current_user.xp += xp
-    db.add(current_user)
 
     if existing:
         existing.completed = True
@@ -288,6 +272,24 @@ async def complete_reading_section(
             xp_awarded=xp,
             completed_at=datetime.now(timezone.utc),
         ))
+
+    await db.flush()
+
+    # Recalculate true total XP by summing database entries to prevent and heal drift
+    lab_xp_sum = await db.scalar(
+        select(func.sum(LabProgress.xp_awarded)).where(
+            LabProgress.user_id == current_user.id,
+            LabProgress.completed == True
+        )
+    ) or 0
+    sec_xp_sum = await db.scalar(
+        select(func.sum(SectionProgress.xp_awarded)).where(
+            SectionProgress.user_id == current_user.id,
+            SectionProgress.completed == True
+        )
+    ) or 0
+    current_user.xp = lab_xp_sum + sec_xp_sum
+    db.add(current_user)
 
     await db.commit()
     return CompleteSectionResponse(xp_awarded=xp, total_xp=current_user.xp)

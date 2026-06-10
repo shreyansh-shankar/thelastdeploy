@@ -59,12 +59,12 @@ docker build -t my-web-app:latest .
 To run a container using your newly built image:
 
 ```bash
-# Run container in background (-d), map host port 8080 to container port 80 (-p)
+# Run container in background (-d), map host port 8256 to container port 80 (-p)
 # Name the container 'tld-my-web-app'
-docker run --name tld-my-web-app -p 8080:80 -d my-web-app:latest
+docker run --name tld-my-web-app -p 8256:80 -d my-web-app:latest
 ```
 
-Open your web browser and go to `http://localhost:8080` to see your custom index page!
+Open your web browser and go to `http://localhost:8256` to see your custom index page!
 
 ---
 
@@ -80,7 +80,7 @@ Create and run a custom Nginx-based container:
 3. Create a file named `index.html` containing the word `antigravity` (or any web content).
 4. Create a `Dockerfile` that uses `nginx:alpine` as the base image, copies your `index.html` into `/usr/share/nginx/html/`, and exposes port `80`.
 5. Build the image and tag it exactly as `my-web-app:latest`.
-6. Start a container from this image named `tld-my-web-app` running in the background and mapping host port `8080` to container port `80`.
+6. Start a container from this image named `tld-my-web-app` running in the background and mapping host port `8256` to container port `80`.
 7. Verify by running:
    ```bash
    tld check

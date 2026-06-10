@@ -33,6 +33,26 @@ async def get_me(
     )
     completed_sections = [row[0] for row in sec_result.fetchall()]
 
+    # Recalculate and heal XP drift
+    lab_xp_sum = await db.scalar(
+        select(func.sum(LabProgress.xp_awarded)).where(
+            LabProgress.user_id == current_user.id,
+            LabProgress.completed == True
+        )
+    ) or 0
+    sec_xp_sum = await db.scalar(
+        select(func.sum(SectionProgress.xp_awarded)).where(
+            SectionProgress.user_id == current_user.id,
+            SectionProgress.completed == True
+        )
+    ) or 0
+    actual_xp = lab_xp_sum + sec_xp_sum
+
+    if current_user.xp != actual_xp:
+        current_user.xp = actual_xp
+        db.add(current_user)
+        await db.commit()
+
     return MeResponse(
         id=current_user.id,
         username=current_user.username,

@@ -99,11 +99,7 @@ export default function ModuleDetailPage() {
 
   const isSectionComplete = useCallback(
     (section: Section): boolean => {
-      if (section.labs.length === 0) {
-        // Optimistic OR confirmed by backend
-        return optimisticCompleted.has(section.id) || section.section_completed;
-      }
-      return section.labs.every((l) => l.completed);
+      return optimisticCompleted.has(section.id) || section.section_completed;
     },
     [optimisticCompleted]
   );

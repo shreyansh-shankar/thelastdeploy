@@ -6,9 +6,9 @@ import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.dependencies import get_db, get_optional_user
-from app.models import Lab, LabProgress, User
+from app.models import Lab, LabProgress, User, SectionProgress
 from app.schemas import ResultRequest, ResultResponse
 
 router = APIRouter()
@@ -91,9 +91,6 @@ async def submit_result(
         return ResultResponse(xp_awarded=0)
 
     # 6. First completion — award XP
-    current_user.xp += lab.xp
-    db.add(current_user)
-
     if existing:
         existing.completed = True
         existing.xp_awarded = lab.xp
@@ -109,6 +106,24 @@ async def submit_result(
             xp_awarded=lab.xp,
             completed_at=datetime.now(timezone.utc),
         ))
+
+    await db.flush()
+
+    # Recalculate true total XP by summing database entries to prevent and heal drift
+    lab_xp_sum = await db.scalar(
+        select(func.sum(LabProgress.xp_awarded)).where(
+            LabProgress.user_id == current_user.id,
+            LabProgress.completed == True
+        )
+    ) or 0
+    sec_xp_sum = await db.scalar(
+        select(func.sum(SectionProgress.xp_awarded)).where(
+            SectionProgress.user_id == current_user.id,
+            SectionProgress.completed == True
+        )
+    ) or 0
+    current_user.xp = lab_xp_sum + sec_xp_sum
+    db.add(current_user)
 
     await db.commit()
     logger.info("Lab completed: user=%s lab=%s xp=%d", current_user.id, body.lab_id, lab.xp)

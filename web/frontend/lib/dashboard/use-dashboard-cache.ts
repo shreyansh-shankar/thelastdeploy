@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 import { User, ModuleDetail } from "@/lib/types";
 import { patchModulesMemoryCache } from "@/hooks/use-modules";
 
-const CACHE_KEY = "tld:dashboard:v2";
+const CACHE_KEY = "tld:dashboard:v4";
 
 export interface DashboardCache {
   user: User;
@@ -155,7 +155,7 @@ export function useDashboardCache(): UseDashboardCacheReturn {
 export function patchSessionModule(moduleId: string, completedSections: number): void {
   try {
     patchModulesMemoryCache(moduleId, completedSections);
-  } catch {}
+  } catch { }
 }
 
 export function updateDashboardCacheModule(updated: ModuleDetail): void {

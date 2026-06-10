@@ -20,11 +20,11 @@ if ! docker ps --filter "name=tld-my-web-app" --format "{{.Names}}" | grep -q "^
   exit 1
 fi
 
-# 4. Check if we can reach it on port 8080
-if ! curl -s --connect-timeout 2 http://localhost:8080 &>/dev/null; then
-  echo "FAIL: Could not connect to container on http://localhost:8080 — is port 8080 mapped to container's port 80?"
+# 4. Check if we can reach it on port 8256
+if ! curl -s --connect-timeout 2 http://localhost:8256 &>/dev/null; then
+  echo "FAIL: Could not connect to container on http://localhost:8256 — is port 8256 mapped to container's port 80?"
   exit 1
 fi
 
-echo "PASS: Custom Docker image built and running container successfully serving on port 8080"
+echo "PASS: Custom Docker image built and running container successfully serving on port 8256"
 exit 0
