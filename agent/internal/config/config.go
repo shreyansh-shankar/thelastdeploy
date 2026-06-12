@@ -9,13 +9,15 @@ import (
 )
 
 type Config struct {
-	APIBaseURL    string
-	DeviceKeyPath string
-	ChallengesDir string
-	AuthToken     string
+	APIBaseURL     string
+	DeviceKeyPath  string
+	ChallengesDir  string
+	AuthToken      string
+	ChallengesRepo string
 }
 
 const defaultAPIBaseURL = "http://localhost:8742"
+const defaultChallengesRepo = "shreyansh-shankar/OrbStack"
 
 func Load() (*Config, error) {
 	path, err := configPath()
@@ -66,9 +68,10 @@ func configPath() (string, error) {
 func defaults() *Config {
 	home, _ := os.UserHomeDir()
 	return &Config{
-		APIBaseURL:    defaultAPIBaseURL,
-		DeviceKeyPath: filepath.Join(home, ".tld", "device.key"),
-		ChallengesDir: filepath.Join(home, ".tld", "challenges"),
+		APIBaseURL:     defaultAPIBaseURL,
+		DeviceKeyPath:  filepath.Join(home, ".tld", "device.key"),
+		ChallengesDir:  filepath.Join(home, ".tld", "challenges"),
+		ChallengesRepo: defaultChallengesRepo,
 	}
 }
 
@@ -98,6 +101,10 @@ func parse(raw string) *Config {
 			if val != "" {
 				cfg.ChallengesDir = expandHome(val)
 			}
+		case "challenges_repo":
+			if val != "" {
+				cfg.ChallengesRepo = val
+			}
 		case "auth_token":
 			cfg.AuthToken = val
 		}
@@ -110,8 +117,8 @@ func write(path string, cfg *Config) error {
 	if cfg.AuthToken != "" {
 		authLine = fmt.Sprintf("auth_token: %s\n", cfg.AuthToken)
 	}
-	content := fmt.Sprintf("# The Last Deploy — agent configuration\n# Generated automatically on first run. Safe to edit.\napi_base_url: %s\ndevice_key_path: %s\nchallenges_dir: %s\n%s",
-		cfg.APIBaseURL, cfg.DeviceKeyPath, cfg.ChallengesDir, authLine)
+	content := fmt.Sprintf("# The Last Deploy — agent configuration\n# Generated automatically on first run. Safe to edit.\napi_base_url: %s\ndevice_key_path: %s\nchallenges_dir: %s\nchallenges_repo: %s\n%s",
+		cfg.APIBaseURL, cfg.DeviceKeyPath, cfg.ChallengesDir, cfg.ChallengesRepo, authLine)
 	return os.WriteFile(path, []byte(content), 0600)
 }
 
