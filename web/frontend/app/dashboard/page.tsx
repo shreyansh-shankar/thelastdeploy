@@ -182,13 +182,8 @@ export default function DashboardPage() {
           {/* Modules progress */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-black text-lg text-foreground">Modules</h2>
+              <h2 className="font-black text-lg text-foreground">Recent Modules</h2>
               <div className="flex items-center gap-3">
-                {activeModules.length > 4 && (
-                  <span className="text-xs text-muted-foreground font-semibold">
-                    Showing 4 of {activeModules.length} active
-                  </span>
-                )}
                 <Link href="/modules" className="text-xs font-bold flex items-center gap-1 hover:opacity-80 text-[var(--accent-primary)]">
                   Browse all <ArrowRight className="h-3 w-3" />
                 </Link>
@@ -271,7 +266,7 @@ export default function DashboardPage() {
           {user.completed_labs.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-black text-lg text-foreground">Recently Completed Labs</h2>
+                <h2 className="font-black text-lg text-foreground">Recent Labs</h2>
                 {user.completed_labs.length > 10 && (
                   <span className="text-xs text-muted-foreground font-semibold">
                     Showing 10 of {user.completed_labs.length}
