@@ -5,5 +5,5 @@ estimated_minutes: 5
 setup:
   type: shell
   seed_commands:
-    - "pkill -f bad_process || true"
+    - "pkill -f bad_proces[s] || true"
     - "nohup bash -c 'exec -a bad_process sleep 3600' >/dev/null 2>&1 &"

@@ -7,7 +7,7 @@ setup:
   seed_commands:
     - "mkdir -p $HOME/network-test"
     - "rm -f $HOME/network-test/api_response.txt"
-    - "pkill -f mock_server.py || true"
+    - "pkill -f mock_serve[r].py || true"
     - "echo 'from http.server import HTTPServer, BaseHTTPRequestHandler' > /tmp/mock_server.py"
     - "echo 'class MyHandler(BaseHTTPRequestHandler):' >> /tmp/mock_server.py"
     - "echo '    def do_GET(self):' >> /tmp/mock_server.py"

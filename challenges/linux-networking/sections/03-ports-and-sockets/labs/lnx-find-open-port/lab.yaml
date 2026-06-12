@@ -7,5 +7,5 @@ setup:
   seed_commands:
     - "mkdir -p $HOME/network-test"
     - "rm -f $HOME/network-test/open_port.txt"
-    - "pkill -f 'nc -lk -p 9876' || true"
+    - "pkill -f 'nc -lk -p 987[6]' || true"
     - "nohup nc -lk -p 9876 127.0.0.1 >/dev/null 2>&1 &"

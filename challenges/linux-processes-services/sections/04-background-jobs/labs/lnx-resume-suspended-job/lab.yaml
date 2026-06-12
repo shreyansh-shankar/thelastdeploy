@@ -5,7 +5,7 @@ estimated_minutes: 5
 setup:
   type: shell
   seed_commands:
-    - "pkill -f suspended_job || true"
+    - "pkill -f suspended_jo[b] || true"
     - "nohup bash -c 'exec -a suspended_job sleep 3600' >/dev/null 2>&1 &"
     - "sleep 0.5"
-    - "pkill -STOP -f suspended_job"
+    - "pkill -STOP -f suspended_jo[b]"

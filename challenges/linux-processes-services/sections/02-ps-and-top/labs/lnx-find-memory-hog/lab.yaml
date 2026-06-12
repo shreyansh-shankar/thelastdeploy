@@ -7,5 +7,5 @@ setup:
   seed_commands:
     - "mkdir -p $HOME/process-test"
     - "rm -f $HOME/process-test/memory_hog.txt"
-    - "pkill -f mem_hog_process || true"
+    - "pkill -f mem_hog_proces[s] || true"
     - "nohup bash -c 'exec -a mem_hog_process sleep 3600' >/dev/null 2>&1 &"
