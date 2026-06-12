@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowRight, Container, GitBranch, Monitor, Server } from "lucide-react";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 
 const features = [
   {
@@ -39,7 +40,13 @@ export default function HomePage() {
     if (!loading && user) router.replace("/dashboard");
   }, [user, loading, router]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
+        <LoadingSpinner />
+      </div>
+    );
+  }
   if (user) return null;
 
   return (

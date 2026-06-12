@@ -18,7 +18,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Sun, Moon } from "lucide-react";
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -95,7 +95,9 @@ export function Navbar() {
             )}
           </Button>
 
-          {user ? (
+          {loading ? (
+            <div className="h-9 w-28 bg-muted/50 animate-pulse rounded-xl border border-border/50" />
+          ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-card hover:bg-muted transition-colors border border-border text-foreground">
