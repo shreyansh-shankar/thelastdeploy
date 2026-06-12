@@ -1,0 +1,11 @@
+id: lnx-find-open-port
+title: "Locate an active local listener"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/network-test"
+    - "rm -f $HOME/network-test/open_port.txt"
+    - "pkill -f 'nc -lk -p 9876' || true"
+    - "nohup nc -lk -p 9876 127.0.0.1 >/dev/null 2>&1 &"

@@ -1,0 +1,7 @@
+id: lnx-passwordless-login
+title: "Setup passwordless login to localhost"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands: []

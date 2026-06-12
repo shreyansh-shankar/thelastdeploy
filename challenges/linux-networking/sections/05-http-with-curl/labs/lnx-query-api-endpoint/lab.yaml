@@ -1,0 +1,23 @@
+id: lnx-query-api-endpoint
+title: "Submit data to an API endpoint"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/network-test"
+    - "rm -f $HOME/network-test/api_response.txt"
+    - "pkill -f mock_server.py || true"
+    - "echo 'from http.server import HTTPServer, BaseHTTPRequestHandler' > /tmp/mock_server.py"
+    - "echo 'class MyHandler(BaseHTTPRequestHandler):' >> /tmp/mock_server.py"
+    - "echo '    def do_GET(self):' >> /tmp/mock_server.py"
+    - "echo '        self.send_response(200)' >> /tmp/mock_server.py"
+    - "echo '        self.end_headers()' >> /tmp/mock_server.py"
+    - "echo '        self.wfile.write(b\"welcome to devlab\")' >> /tmp/mock_server.py"
+    - "echo '    def do_POST(self):' >> /tmp/mock_server.py"
+    - "echo '        self.send_response(201)' >> /tmp/mock_server.py"
+    - "echo '        self.end_headers()' >> /tmp/mock_server.py"
+    - "echo '        self.wfile.write(b\"created successfully\")' >> /tmp/mock_server.py"
+    - "echo 'HTTPServer((\"127.0.0.1\", 9090), MyHandler).serve_forever()' >> /tmp/mock_server.py"
+    - "nohup python3 /tmp/mock_server.py >/dev/null 2>&1 &"
+    - "sleep 0.5"
