@@ -52,8 +52,35 @@ export default function DashboardPage() {
   const labToModule: Record<string, string> = {};
   modules.forEach((m) => m.sections.forEach((s) => s.labs.forEach((l) => { labToModule[l.id] = m.id; })));
 
+  const getModuleRecencyIndex = (m: ModuleDetail) => {
+    const allLabs = m.sections.flatMap((s) => s.labs);
+    const allSections = m.sections;
+    
+    let minIdx = Infinity;
+    allLabs.forEach((l) => {
+      const idx = user.completed_labs.indexOf(l.id);
+      if (idx !== -1 && idx < minIdx) {
+        minIdx = idx;
+      }
+    });
+    allSections.forEach((s) => {
+      const idx = user.completed_sections.indexOf(s.id);
+      if (idx !== -1 && idx < minIdx) {
+        minIdx = idx;
+      }
+    });
+    
+    return minIdx;
+  };
+
   const completedModules = modules.filter(isModuleComplete);
   const inProgressModules = modules.filter(isModuleInProgress);
+
+  const activeModules = modules
+    .filter((m) => isModuleComplete(m) || isModuleInProgress(m))
+    .sort((a, b) => getModuleRecencyIndex(a) - getModuleRecencyIndex(b));
+
+  const activeModulesToShow = activeModules.slice(0, 4);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -156,12 +183,19 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-black text-lg text-foreground">Modules</h2>
-              <Link href="/modules" className="text-xs font-bold flex items-center gap-1 hover:opacity-80 text-[var(--accent-primary)]">
-                Browse all <ArrowRight className="h-3 w-3" />
-              </Link>
+              <div className="flex items-center gap-3">
+                {activeModules.length > 4 && (
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    Showing 4 of {activeModules.length} active
+                  </span>
+                )}
+                <Link href="/modules" className="text-xs font-bold flex items-center gap-1 hover:opacity-80 text-[var(--accent-primary)]">
+                  Browse all <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
 
-            {completedModules.length === 0 && inProgressModules.length === 0 ? (
+            {activeModules.length === 0 ? (
               <div className="text-center py-10">
                 <Terminal className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">No modules started yet.</p>
@@ -171,60 +205,63 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {completedModules.map((m) => (
-                  <Link key={m.id} href={`/modules/${m.id}`}>
-                    <div
-                      className="flex items-center justify-between px-4 py-3 rounded-xl border transition-all hover:scale-[1.01] hover:border-[rgba(var(--accent-primary-rgb),0.3)] cursor-pointer"
-                      style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.03)", borderColor: "rgba(var(--accent-primary-rgb),0.15)" }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-primary)]" />
-                        <div>
-                          <p className="font-bold text-sm text-foreground">{m.title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{m.sections.length} sections · {m.total_xp} XP earned</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0 bg-[rgba(var(--accent-primary-rgb),0.08)] text-[var(--accent-primary)] border border-[rgba(var(--accent-primary-rgb),0.15)]">
-                        Complete
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-
-                {inProgressModules.map((m) => {
-                  const allLabs = m.sections.flatMap((s) => s.labs);
-                  const allItems = [
-                    ...allLabs.map((l) => ({ id: l.id, type: "lab" })),
-                    ...m.sections.filter((s) => s.labs.length === 0).map((s) => ({ id: s.id, type: "section" })),
-                  ];
-                  const done = allItems.filter((item) =>
-                    item.type === "lab"
-                      ? user.completed_labs.includes(item.id)
-                      : user.completed_sections.includes(item.id)
-                  ).length;
-                  const pct = allItems.length > 0 ? Math.round((done / allItems.length) * 100) : 0;
-
-                  return (
-                    <Link key={m.id} href={`/modules/${m.id}`}>
-                      <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-muted/20 transition-all hover:scale-[1.01] hover:bg-muted/40 cursor-pointer">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-5 h-5 rounded-full border-2 border-border shrink-0 flex items-center justify-center">
-                            <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm text-foreground truncate">{m.title}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="w-20 h-1 rounded-full bg-muted overflow-hidden">
-                                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "var(--accent-primary)" }} />
-                              </div>
-                              <span className="text-xs text-muted-foreground font-mono">{done}/{allItems.length} completed</span>
+                {activeModulesToShow.map((m) => {
+                  const isComplete = isModuleComplete(m);
+                  if (isComplete) {
+                    return (
+                      <Link key={m.id} href={`/modules/${m.id}`}>
+                        <div
+                          className="flex items-center justify-between px-4 py-3 rounded-xl border transition-all hover:scale-[1.01] hover:border-[rgba(var(--accent-primary-rgb),0.3)] cursor-pointer"
+                          style={{ backgroundColor: "rgba(var(--accent-primary-rgb),0.03)", borderColor: "rgba(var(--accent-primary-rgb),0.15)" }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-primary)]" />
+                            <div>
+                              <p className="font-bold text-sm text-foreground">{m.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{m.sections.length} sections · {m.total_xp} XP earned</p>
                             </div>
                           </div>
+                          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0 bg-[rgba(var(--accent-primary-rgb),0.08)] text-[var(--accent-primary)] border border-[rgba(var(--accent-primary-rgb),0.15)]">
+                            Complete
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground shrink-0 ml-3 font-semibold">{pct}%</span>
-                      </div>
-                    </Link>
-                  );
+                      </Link>
+                    );
+                  } else {
+                    const allLabs = m.sections.flatMap((s) => s.labs);
+                    const allItems = [
+                      ...allLabs.map((l) => ({ id: l.id, type: "lab" })),
+                      ...m.sections.filter((s) => s.labs.length === 0).map((s) => ({ id: s.id, type: "section" })),
+                    ];
+                    const done = allItems.filter((item) =>
+                      item.type === "lab"
+                        ? user.completed_labs.includes(item.id)
+                        : user.completed_sections.includes(item.id)
+                    ).length;
+                    const pct = allItems.length > 0 ? Math.round((done / allItems.length) * 100) : 0;
+
+                    return (
+                      <Link key={m.id} href={`/modules/${m.id}`}>
+                        <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-muted/20 transition-all hover:scale-[1.01] hover:bg-muted/40 cursor-pointer">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-5 h-5 rounded-full border-2 border-border shrink-0 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-foreground truncate">{m.title}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="w-20 h-1 rounded-full bg-muted overflow-hidden">
+                                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "var(--accent-primary)" }} />
+                                </div>
+                                <span className="text-xs text-muted-foreground font-mono">{done}/{allItems.length} completed</span>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0 ml-3 font-semibold">{pct}%</span>
+                        </div>
+                      </Link>
+                    );
+                  }
                 })}
               </div>
             )}
@@ -233,11 +270,23 @@ export default function DashboardPage() {
           {/* Completed labs badges */}
           {user.completed_labs.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="font-black text-lg mb-4 text-foreground">Completed Labs</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-black text-lg text-foreground">Recently Completed Labs</h2>
+                {user.completed_labs.length > 10 && (
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    Showing 10 of {user.completed_labs.length}
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
-                {user.completed_labs.map((labId) => (
+                {user.completed_labs.slice(0, 10).map((labId) => (
                   <SectionBadge key={labId} sectionId={labId} moduleId={labToModule[labId]} />
                 ))}
+                {user.completed_labs.length > 10 && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-xl border border-border bg-muted/20 text-xs text-muted-foreground font-bold font-mono">
+                    + {user.completed_labs.length - 10} more
+                  </span>
+                )}
               </div>
             </div>
           )}
