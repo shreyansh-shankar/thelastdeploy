@@ -1,0 +1,14 @@
+id: lnx-recover-broken-web-service
+title: "Fix a failing user service"
+xp: 30
+estimated_minutes: 10
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/.config/systemd/user"
+    - "echo '[Unit]' > $HOME/.config/systemd/user/devlab-broken.service"
+    - "echo 'Description=DevLab Broken Service' >> $HOME/.config/systemd/user/devlab-broken.service"
+    - "echo '[Service]' >> $HOME/.config/systemd/user/devlab-broken.service"
+    - "echo 'ExecStart=/bin/sleepy 3600' >> $HOME/.config/systemd/user/devlab-broken.service"
+    - "systemctl --user daemon-reload"
+    - "systemctl --user stop devlab-broken.service || true"

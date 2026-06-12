@@ -1,0 +1,9 @@
+id: lnx-run-background-job
+title: "Start a job in the background"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/jobs-test"
+    - "rm -f $HOME/jobs-test/bg_pid.txt"

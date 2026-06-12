@@ -1,0 +1,9 @@
+id: lnx-inspect-service
+title: "Inspect system service status"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/service-test"
+    - "rm -f $HOME/service-test/cron_status.txt"
