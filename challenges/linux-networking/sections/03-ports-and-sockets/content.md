@@ -53,7 +53,19 @@ https           443/tcp                         # http protocol over TLS/SSL
 
 ## Lab Tasks
 
-### Task 1: Locate an active local listener
+### Task 1: Query the standard SSH service port
+1. Start the lab in your terminal:
+   ```bash
+   tld start lnx-find-service-port
+   ```
+2. Search through the system service database `/etc/services` to find the default TCP port number reserved for SSH connections.
+3. Save that port number (exactly `22`) on a single line to a file named `ssh_port.txt` inside your `~/network-test` directory.
+4. Verify the task:
+   ```bash
+   tld check
+   ```
+
+### Task 2: Locate an active local listener
 1. Start the lab in your terminal:
    ```bash
    tld start lnx-find-open-port
@@ -66,7 +78,7 @@ https           443/tcp                         # http protocol over TLS/SSL
    tld check
    ```
 
-### Task 2: Identify the listening process ID
+### Task 3: Identify the listening process ID
 1. Start the lab in your terminal:
    ```bash
    tld start lnx-identify-listening-process
@@ -75,18 +87,6 @@ https           443/tcp                         # http protocol over TLS/SSL
 3. Locate this service on your system and identify the **Process ID (PID)** of the process holding that port open.
 4. Save the PID number on a single line to a file named `listening_pid.txt` inside your `~/network-test` directory.
 5. Verify the task:
-   ```bash
-   tld check
-   ```
-
-### Task 3: Query the standard SSH service port
-1. Start the lab in your terminal:
-   ```bash
-   tld start lnx-find-service-port
-   ```
-2. Search through the system service database `/etc/services` to find the default TCP port number reserved for SSH connections.
-3. Save that port number (exactly `22`) on a single line to a file named `ssh_port.txt` inside your `~/network-test` directory.
-4. Verify the task:
    ```bash
    tld check
    ```
