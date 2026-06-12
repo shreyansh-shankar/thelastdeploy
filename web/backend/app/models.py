@@ -45,7 +45,7 @@ class Section(Base):
     __tablename__ = "sections"
 
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
-    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), nullable=False)
+    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), index=True, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     order: Mapped[int] = mapped_column(Integer, nullable=False)
     xp: Mapped[int] = mapped_column(Integer, default=10)
@@ -61,8 +61,8 @@ class Lab(Base):
     __tablename__ = "labs"
 
     id: Mapped[str] = mapped_column(String(100), primary_key=True)  # globally unique
-    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), nullable=False)
-    section_id: Mapped[str] = mapped_column(String(100), ForeignKey("sections.id"), nullable=False)
+    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), index=True, nullable=False)
+    section_id: Mapped[str] = mapped_column(String(100), ForeignKey("sections.id"), index=True, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0)
     xp: Mapped[int] = mapped_column(Integer, default=0)
@@ -83,10 +83,10 @@ class LabProgress(Base):
     __tablename__ = "lab_progress"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    lab_id: Mapped[str] = mapped_column(String(100), ForeignKey("labs.id"), nullable=False)
-    section_id: Mapped[str] = mapped_column(String(100), ForeignKey("sections.id"), nullable=False)
-    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    lab_id: Mapped[str] = mapped_column(String(100), ForeignKey("labs.id"), index=True, nullable=False)
+    section_id: Mapped[str] = mapped_column(String(100), ForeignKey("sections.id"), index=True, nullable=False)
+    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), index=True, nullable=False)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     xp_awarded: Mapped[int] = mapped_column(Integer, default=0)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -107,9 +107,9 @@ class SectionProgress(Base):
     __tablename__ = "section_progress"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), nullable=False)
-    section_id: Mapped[str] = mapped_column(String(100), ForeignKey("sections.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    module_id: Mapped[str] = mapped_column(String(100), ForeignKey("modules.id"), index=True, nullable=False)
+    section_id: Mapped[str] = mapped_column(String(100), ForeignKey("sections.id"), index=True, nullable=False)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     xp_awarded: Mapped[int] = mapped_column(Integer, default=0)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

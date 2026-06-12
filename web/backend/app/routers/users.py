@@ -15,37 +15,26 @@ async def get_me(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Completed labs (from tld check)
-    lab_result = await db.execute(
-        select(LabProgress.lab_id).where(
+    # 1. Fetch lab progress in a single query
+    lab_progress_list = (await db.execute(
+        select(LabProgress).where(
             LabProgress.user_id == current_user.id,
             LabProgress.completed == True,
         )
-    )
-    completed_labs = [row[0] for row in lab_result.fetchall()]
+    )).scalars().all()
+    completed_labs = [p.lab_id for p in lab_progress_list]
+    lab_xp_sum = sum(p.xp_awarded for p in lab_progress_list)
 
-    # Completed sections (reading scroll / future: questions)
-    sec_result = await db.execute(
-        select(SectionProgress.section_id).where(
+    # 2. Fetch section progress in a single query
+    section_progress_list = (await db.execute(
+        select(SectionProgress).where(
             SectionProgress.user_id == current_user.id,
             SectionProgress.completed == True,
         )
-    )
-    completed_sections = [row[0] for row in sec_result.fetchall()]
+    )).scalars().all()
+    completed_sections = [p.section_id for p in section_progress_list]
+    sec_xp_sum = sum(p.xp_awarded for p in section_progress_list)
 
-    # Recalculate and heal XP drift
-    lab_xp_sum = await db.scalar(
-        select(func.sum(LabProgress.xp_awarded)).where(
-            LabProgress.user_id == current_user.id,
-            LabProgress.completed == True
-        )
-    ) or 0
-    sec_xp_sum = await db.scalar(
-        select(func.sum(SectionProgress.xp_awarded)).where(
-            SectionProgress.user_id == current_user.id,
-            SectionProgress.completed == True
-        )
-    ) or 0
     actual_xp = lab_xp_sum + sec_xp_sum
 
     if current_user.xp != actual_xp:

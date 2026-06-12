@@ -77,6 +77,93 @@ async def list_modules(
 
 
 # ---------------------------------------------------------------------------
+# GET /modules/all/full — bulk details (sections + labs + progress)
+# ---------------------------------------------------------------------------
+
+@router.get("/modules/all/full", response_model=list[ModuleDetail])
+async def get_all_modules_full(
+    exclude_content: bool = True,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(get_optional_user),
+):
+    from sqlalchemy.orm import selectinload
+
+    # 1. Eagerly load all modules, sections, and labs in 3 database queries
+    result = await db.execute(
+        select(Module).options(
+            selectinload(Module.sections).selectinload(Section.labs)
+        )
+    )
+    modules = result.scalars().all()
+
+    # 2. Retrieve user's lab and section progress globally
+    lab_progress_map = {}
+    completed_section_ids = set()
+
+    if current_user:
+        lp_result = await db.execute(
+            select(LabProgress).where(LabProgress.user_id == current_user.id)
+        )
+        for p in lp_result.scalars().all():
+            lab_progress_map[p.lab_id] = p
+
+        sp_result = await db.execute(
+            select(SectionProgress.section_id).where(
+                SectionProgress.user_id == current_user.id,
+                SectionProgress.completed == True,
+            )
+        )
+        completed_section_ids = {row[0] for row in sp_result.fetchall()}
+
+    # 3. Build ModuleDetail list
+    items = []
+    for m in modules:
+        section_schemas = []
+        for s in m.sections:
+            lab_schemas = [
+                LabSchema(
+                    id=lab.id,
+                    title=lab.title,
+                    order=lab.order,
+                    xp=lab.xp,
+                    estimated_minutes=lab.estimated_minutes,
+                    setup_type=lab.setup_type,
+                    seed_commands=lab.seed_commands,
+                    resource_limits_cpu=lab.resource_limits_cpu,
+                    resource_limits_mem=lab.resource_limits_mem,
+                    completed=lab_progress_map[lab.id].completed if lab.id in lab_progress_map else False,
+                    xp_awarded=lab_progress_map[lab.id].xp_awarded if lab.id in lab_progress_map else 0,
+                )
+                for lab in s.labs
+            ]
+            section_schemas.append(SectionSchema(
+                id=s.id,
+                title=s.title,
+                order=s.order,
+                xp=s.xp,
+                content=None if exclude_content else s.content,
+                labs=lab_schemas,
+                section_completed=s.id in completed_section_ids,
+            ))
+
+        all_labs = [lab for s in m.sections for lab in s.labs]
+        items.append(ModuleDetail(
+            id=m.id,
+            title=m.title,
+            description=m.description,
+            topic=m.topic,
+            difficulty=m.difficulty,
+            estimated_minutes=m.estimated_minutes,
+            tags=[t.strip() for t in (m.tags or "").split(",") if t.strip()],
+            total_xp=_total_xp(m.sections, all_labs),
+            total_sections=len(m.sections),
+            sections=section_schemas,
+        ))
+
+    return items
+
+
+# ---------------------------------------------------------------------------
 # GET /modules/:id/full — sections + labs + progress (frontend)
 # ---------------------------------------------------------------------------
 

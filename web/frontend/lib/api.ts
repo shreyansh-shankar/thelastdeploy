@@ -32,13 +32,10 @@ async function warmCache(token: string): Promise<void> {
   try {
     // Temporarily set token so request() can use it
     localStorage.setItem("token", token);
-    const [user, { modules: list }] = await Promise.all([
+    const [user, modules] = await Promise.all([
       request<User>("/me"),
-      request<{ modules: Module[] }>("/modules"),
+      request<ModuleDetail[]>("/modules/all/full?exclude_content=true"),
     ]);
-    const modules = await Promise.all(
-      list.map((m) => request<ModuleDetail>(`/modules/${m.id}/full`))
-    );
     writeCache({ user, modules });
   } catch {
     // Non-fatal — dashboard will fetch on next load
@@ -75,6 +72,9 @@ export const api = {
   // Modules
   getModules: () =>
     request<{ modules: Module[] }>("/modules"),
+
+  getAllModulesFull: (excludeContent?: boolean) =>
+    request<ModuleDetail[]>(`/modules/all/full?exclude_content=${excludeContent ?? false}`),
 
   getModule: (id: string) =>
     request<ModuleDetail>(`/modules/${id}/full`),

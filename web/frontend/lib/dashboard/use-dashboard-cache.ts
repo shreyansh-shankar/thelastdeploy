@@ -10,6 +10,7 @@ import { User, ModuleDetail } from "@/lib/types";
 import { patchModulesMemoryCache } from "@/hooks/use-modules";
 
 let memoryDashboardCache: DashboardCache | null = null;
+const SESSION_CACHE_KEY = "tld:dashboard:cache";
 
 export interface DashboardCache {
   user: User;
@@ -19,7 +20,19 @@ export interface DashboardCache {
 // ── Raw in-memory helpers ──────────────────────────────────────────────────
 
 export function readCache(): DashboardCache | null {
-  return memoryDashboardCache;
+  if (memoryDashboardCache) return memoryDashboardCache;
+  if (typeof window !== "undefined") {
+    const serialized = sessionStorage.getItem(SESSION_CACHE_KEY);
+    if (serialized) {
+      try {
+        memoryDashboardCache = JSON.parse(serialized);
+        return memoryDashboardCache;
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }
+  return null;
 }
 
 export const CACHE_EVENT = "tld:dashboard:updated";
@@ -27,6 +40,11 @@ export const CACHE_EVENT = "tld:dashboard:updated";
 export function writeCache(data: DashboardCache): void {
   memoryDashboardCache = data;
   if (typeof window !== "undefined") {
+    try {
+      sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(data));
+    } catch {
+      // Ignore storage limits
+    }
     window.dispatchEvent(new Event(CACHE_EVENT));
   }
 }
@@ -34,6 +52,7 @@ export function writeCache(data: DashboardCache): void {
 export function clearDashboardCache(): void {
   memoryDashboardCache = null;
   if (typeof window !== "undefined") {
+    sessionStorage.removeItem(SESSION_CACHE_KEY);
     window.dispatchEvent(new Event(CACHE_EVENT));
   }
 }
@@ -92,11 +111,10 @@ export function useDashboardCache(): UseDashboardCacheReturn {
 
     (async () => {
       try {
-        const [user, { modules: list }] = await Promise.all([
+        const [user, modules] = await Promise.all([
           api.getMe(),
-          api.getModules(),
+          api.getAllModulesFull(true), // true = exclude_content
         ]);
-        const modules = await Promise.all(list.map((m) => api.getModule(m.id)));
         const fresh: DashboardCache = { user, modules };
         writeCache(fresh);
         setData(fresh);
