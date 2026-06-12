@@ -8,4 +8,4 @@ setup:
   seed_commands:
     - "mkdir -p $HOME/network-test"
     - "rm -f $HOME/network-test/open_port.txt"
-    - "PORT=$((RANDOM%1000+40000)); echo $PORT >/tmp/tld-lab-port; nohup python3 -c \"import socket,time;s=socket.socket();s.bind(('127.0.0.1',$PORT));s.listen();time.sleep(3600)\" >/dev/null 2>&1 &"
+    - "nohup python3 -m http.server 9876 --bind 127.0.0.1 >/dev/null 2>&1 &"
