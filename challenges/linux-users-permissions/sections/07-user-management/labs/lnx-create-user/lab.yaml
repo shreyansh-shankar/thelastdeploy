@@ -1,0 +1,7 @@
+id: lnx-create-user
+title: "Create a new system user"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands: []

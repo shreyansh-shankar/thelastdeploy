@@ -1,0 +1,9 @@
+id: lnx-export-variable
+title: "Export an environment variable"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/env-test"
+    - "rm -f $HOME/env-test/export_cmd.txt"

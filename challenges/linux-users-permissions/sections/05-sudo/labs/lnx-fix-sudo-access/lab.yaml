@@ -1,0 +1,10 @@
+id: lnx-fix-sudo-access
+title: "Configure passwordless sudo for a deployer script"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/sudo-test"
+    - "echo '# Grant deployer root privileges without password' > $HOME/sudo-test/deployer-sudo"
+    - "echo 'deployer INVALID_SYNTAX NOPASSWD' >> $HOME/sudo-test/deployer-sudo"

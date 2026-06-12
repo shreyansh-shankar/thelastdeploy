@@ -1,0 +1,11 @@
+id: lnx-fix-owner
+title: "Change file ownership"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/ownership-test"
+    - "touch $HOME/ownership-test/admin-file.txt"
+    - "chown $(whoami):$(id -gn) $HOME/ownership-test/admin-file.txt"
+    - "chmod 644 $HOME/ownership-test/admin-file.txt"

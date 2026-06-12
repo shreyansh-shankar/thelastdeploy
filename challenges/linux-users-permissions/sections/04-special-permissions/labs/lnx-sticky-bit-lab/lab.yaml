@@ -1,0 +1,9 @@
+id: lnx-sticky-bit-lab
+title: "Protect a directory with the Sticky Bit"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/special-test/sticky-dir"
+    - "chmod 777 $HOME/special-test/sticky-dir"

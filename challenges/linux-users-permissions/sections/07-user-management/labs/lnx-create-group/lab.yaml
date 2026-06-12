@@ -1,0 +1,7 @@
+id: lnx-create-group
+title: "Create a system group"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands: []

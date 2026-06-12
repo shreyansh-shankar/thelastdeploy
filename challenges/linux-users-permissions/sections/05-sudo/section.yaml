@@ -1,0 +1,4 @@
+id: 05-sudo
+title: "Sudo and Privilege Escalation"
+order: 5
+xp: 15

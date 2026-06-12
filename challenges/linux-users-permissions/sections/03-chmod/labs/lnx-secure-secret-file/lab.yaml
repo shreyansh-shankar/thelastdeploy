@@ -1,0 +1,10 @@
+id: lnx-secure-secret-file
+title: "Secure private credentials"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/chmod-test"
+    - "touch $HOME/chmod-test/secret.txt"
+    - "chmod 644 $HOME/chmod-test/secret.txt"

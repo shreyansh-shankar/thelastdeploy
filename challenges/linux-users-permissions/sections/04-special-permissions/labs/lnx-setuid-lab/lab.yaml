@@ -1,0 +1,10 @@
+id: lnx-setuid-lab
+title: "Configure SUID on a helper utility"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/special-test"
+    - "touch $HOME/special-test/suid-helper"
+    - "chmod 755 $HOME/special-test/suid-helper"

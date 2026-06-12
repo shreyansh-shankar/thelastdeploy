@@ -1,0 +1,7 @@
+id: lnx-add-user-group
+title: "Add user to a group"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands: []

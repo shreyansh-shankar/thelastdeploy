@@ -1,0 +1,11 @@
+id: lnx-check-owner
+title: "Identify file owner and group"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/ownership-test"
+    - "rm -f $HOME/ownership-test/owner_info.txt"
+    - "touch /tmp/ownership-check.txt"
+    - "chmod 644 /tmp/ownership-check.txt"

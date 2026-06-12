@@ -1,0 +1,10 @@
+id: lnx-public-readonly-file
+title: "Setup a public read-only file"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/chmod-test"
+    - "touch $HOME/chmod-test/readme.txt"
+    - "chmod 777 $HOME/chmod-test/readme.txt"

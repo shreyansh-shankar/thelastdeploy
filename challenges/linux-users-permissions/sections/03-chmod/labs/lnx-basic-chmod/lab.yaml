@@ -1,0 +1,10 @@
+id: lnx-basic-chmod
+title: "Make a script executable"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/chmod-test"
+    - "touch $HOME/chmod-test/script.sh"
+    - "chmod 644 $HOME/chmod-test/script.sh"

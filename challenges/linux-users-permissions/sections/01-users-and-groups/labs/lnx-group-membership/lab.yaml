@@ -1,0 +1,9 @@
+id: lnx-group-membership
+title: "Check your group memberships"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/users-groups-test"
+    - "rm -f $HOME/users-groups-test/my_groups.txt"
