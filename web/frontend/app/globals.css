@@ -37,17 +37,26 @@
   --topic-docker:     #f0fdf4;
   --topic-kubernetes: #faf5ff;
   --topic-linux:      #fffbeb;
-  --topic-cicd:       #ecfeff;
+  --topic-git:        #fff1f2;
+  --topic-jenkins:    #fff7ed;
+  --topic-terraform:  #ecfeff;
+  --topic-nginx:      #f0fdf4;
 
   --topic-docker-border:     #bbf7d0;
   --topic-kubernetes-border: #e9d5ff;
   --topic-linux-border:      #fde68a;
-  --topic-cicd-border:       #c5f6fa;
+  --topic-git-border:        #fecdd3;
+  --topic-jenkins-border:    #fed7aa;
+  --topic-terraform-border:  #a5f3fc;
+  --topic-nginx-border:      #bbf7d0;
 
   --topic-docker-text:     #166534;
   --topic-kubernetes-text: #6b21a8;
   --topic-linux-text:      #92400e;
-  --topic-cicd-text:       #075985;
+  --topic-git-text:        #be123c;
+  --topic-jenkins-text:    #c2410c;
+  --topic-terraform-text:  #0891b2;
+  --topic-nginx-text:      #15803d;
 
   /* Base theme - LIGHT MODE */
   --background: #f8fafc;
@@ -78,17 +87,26 @@
   --topic-docker:     #121d33;
   --topic-kubernetes: #160f28;
   --topic-linux:      #241407;
-  --topic-cicd:       #061a1f;
+  --topic-git:        #271216;
+  --topic-jenkins:    #231207;
+  --topic-terraform:  #061d24;
+  --topic-nginx:      #061f12;
 
   --topic-docker-border:     #1d3261;
   --topic-kubernetes-border: #331d61;
   --topic-linux-border:      #61320d;
-  --topic-cicd-border:       #0d4961;
+  --topic-git-border:        #4a1017;
+  --topic-jenkins-border:    #4c240c;
+  --topic-terraform-border:  #0b4c5a;
+  --topic-nginx-border:      #0d4f2f;
 
   --topic-docker-text:     #93c5fd;
   --topic-kubernetes-text: #c084fc;
   --topic-linux-text:      #fdba74;
-  --topic-cicd-text:       #67e8f9;
+  --topic-git-text:        #fda4af;
+  --topic-jenkins-text:    #fdbb74;
+  --topic-terraform-text:  #67e8f9;
+  --topic-nginx-text:      #4ade80;
 
   /* Base theme - DARK MODE */
   --background: #09090b;

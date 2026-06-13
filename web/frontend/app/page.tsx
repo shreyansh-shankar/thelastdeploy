@@ -26,9 +26,9 @@ const features = [
     bg: "var(--topic-linux)", border: "var(--topic-linux-border)", color: "var(--topic-linux-text)",
   },
   {
-    icon: GitBranch, title: "CI/CD",
-    description: "Pipelines, deploys, automation.",
-    bg: "var(--topic-cicd)", border: "var(--topic-cicd-border)", color: "var(--topic-cicd-text)",
+    icon: GitBranch, title: "Git",
+    description: "Version control, repositories, commits.",
+    bg: "var(--topic-git)", border: "var(--topic-git-border)", color: "var(--topic-git-text)",
   },
 ];
 
@@ -67,7 +67,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-            Hands-on challenges for Docker, Kubernetes, Linux, and CI/CD.
+            Hands-on challenges for Docker, Kubernetes, Linux, and Git.
             Run labs locally — no cloud account, no credit card, no BS.
           </p>
 

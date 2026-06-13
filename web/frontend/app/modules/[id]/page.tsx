@@ -22,7 +22,10 @@ const topicConfig: Record<string, { border: string; label: string; color: string
   docker:     { border: "var(--topic-docker-border)",     label: "Docker",     color: "var(--topic-docker-text)" },
   kubernetes: { border: "var(--topic-kubernetes-border)", label: "Kubernetes", color: "var(--topic-kubernetes-text)" },
   linux:      { border: "var(--topic-linux-border)",      label: "Linux",      color: "var(--topic-linux-text)" },
-  cicd:       { border: "var(--topic-cicd-border)",       label: "CI/CD",      color: "var(--topic-cicd-text)" },
+  git:        { border: "var(--topic-git-border)",        label: "Git",        color: "var(--topic-git-text)" },
+  jenkins:    { border: "var(--topic-jenkins-border)",    label: "Jenkins",    color: "var(--topic-jenkins-text)" },
+  terraform:  { border: "var(--topic-terraform-border)",  label: "Terraform",  color: "var(--topic-terraform-text)" },
+  nginx:      { border: "var(--topic-nginx-border)",      label: "Nginx",      color: "var(--topic-nginx-text)" },
 };
 
 interface Toast {

@@ -9,7 +9,10 @@ const topicConfig: Record<string, { bg: string; border: string; label: string; c
   docker:     { bg: "var(--topic-docker)",     border: "var(--topic-docker-border)",     label: "Docker",     color: "var(--topic-docker-text)" },
   kubernetes: { bg: "var(--topic-kubernetes)", border: "var(--topic-kubernetes-border)", label: "Kubernetes", color: "var(--topic-kubernetes-text)" },
   linux:      { bg: "var(--topic-linux)",      border: "var(--topic-linux-border)",      label: "Linux",      color: "var(--topic-linux-text)" },
-  cicd:       { bg: "var(--topic-cicd)",       border: "var(--topic-cicd-border)",       label: "CI/CD",      color: "var(--topic-cicd-text)" },
+  git:        { bg: "var(--topic-git)",        border: "var(--topic-git-border)",        label: "Git",        color: "var(--topic-git-text)" },
+  jenkins:    { bg: "var(--topic-jenkins)",    border: "var(--topic-jenkins-border)",    label: "Jenkins",    color: "var(--topic-jenkins-text)" },
+  terraform:  { bg: "var(--topic-terraform)",  border: "var(--topic-terraform-border)",  label: "Terraform",  color: "var(--topic-terraform-text)" },
+  nginx:      { bg: "var(--topic-nginx)",      border: "var(--topic-nginx-border)",      label: "Nginx",      color: "var(--topic-nginx-text)" },
 };
 
 export function ModuleCard({ module }: { module: Module }) {

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { Search, X, Container, Server, Monitor, GitBranch, Sparkles, Zap, Flame, Gem } from "lucide-react";
+import { Search, X, Container, Server, Monitor, GitBranch, Sparkles, Zap, Flame, Gem, Infinity, Layers, Globe } from "lucide-react";
 import { Difficulty, Topic } from "@/lib/types";
 
 const TOPICS: { key: "all" | Topic; label: string; icon: typeof Container }[] = [
@@ -10,7 +10,10 @@ const TOPICS: { key: "all" | Topic; label: string; icon: typeof Container }[] = 
   { key: "docker", label: "Docker", icon: Container },
   { key: "kubernetes", label: "Kubernetes", icon: Server },
   { key: "linux", label: "Linux", icon: Monitor },
-  { key: "cicd", label: "CI/CD", icon: GitBranch },
+  { key: "git", label: "Git", icon: GitBranch },
+  { key: "jenkins", label: "Jenkins", icon: Infinity },
+  { key: "terraform", label: "Terraform", icon: Layers },
+  { key: "nginx", label: "Nginx", icon: Globe },
 ];
 
 const DIFFICULTIES: { key: "all" | Difficulty; label: string; icon: typeof Zap; color: string }[] = [
@@ -24,7 +27,10 @@ const topicStyles: Record<string, { bg: string; border: string; text: string }> 
   docker:     { bg: "var(--topic-docker)",     border: "var(--topic-docker-border)",     text: "var(--topic-docker-text)" },
   kubernetes: { bg: "var(--topic-kubernetes)", border: "var(--topic-kubernetes-border)", text: "var(--topic-kubernetes-text)" },
   linux:      { bg: "var(--topic-linux)",      border: "var(--topic-linux-border)",      text: "var(--topic-linux-text)" },
-  cicd:       { bg: "var(--topic-cicd)",       border: "var(--topic-cicd-border)",       text: "var(--topic-cicd-text)" },
+  git:        { bg: "var(--topic-git)",        border: "var(--topic-git-border)",        text: "var(--topic-git-text)" },
+  jenkins:    { bg: "var(--topic-jenkins)",    border: "var(--topic-jenkins-border)",    text: "var(--topic-jenkins-text)" },
+  terraform:  { bg: "var(--topic-terraform)",  border: "var(--topic-terraform-border)",  text: "var(--topic-terraform-text)" },
+  nginx:      { bg: "var(--topic-nginx)",      border: "var(--topic-nginx-border)",      text: "var(--topic-nginx-text)" },
 };
 
 interface ModuleFiltersProps {

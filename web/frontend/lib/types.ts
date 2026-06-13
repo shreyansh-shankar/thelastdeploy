@@ -1,6 +1,6 @@
 // web/frontend/lib/types.ts
 
-export type Topic = "docker" | "kubernetes" | "linux" | "cicd";
+export type Topic = "docker" | "kubernetes" | "linux" | "git" | "jenkins" | "terraform" | "nginx";
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 
 export interface Lab {

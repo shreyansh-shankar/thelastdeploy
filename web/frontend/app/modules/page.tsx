@@ -5,13 +5,16 @@
 import { useModules } from "@/hooks/use-modules";
 import { ModuleGrid } from "@/components/modules/module-grid";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Container, Server, Monitor, GitBranch, Zap } from "lucide-react";
+import { Container, Server, Monitor, GitBranch, Zap, Infinity, Layers, Globe } from "lucide-react";
 
 const topicStats = [
-  { key: "docker",     label: "Docker",     icon: Container, bg: "var(--topic-docker)",     border: "var(--topic-docker-border)",     color: "var(--topic-docker-text)" },
-  { key: "kubernetes", label: "Kubernetes", icon: Server,    bg: "var(--topic-kubernetes)", border: "var(--topic-kubernetes-border)", color: "var(--topic-kubernetes-text)" },
-  { key: "linux",      label: "Linux",      icon: Monitor,   bg: "var(--topic-linux)",      border: "var(--topic-linux-border)",      color: "var(--topic-linux-text)" },
-  { key: "cicd",       label: "CI/CD",      icon: GitBranch, bg: "var(--topic-cicd)",       border: "var(--topic-cicd-border)",       color: "var(--topic-cicd-text)" },
+  { key: "docker",     label: "Docker",     icon: Container, bg: "var(--topic-docker)",     borderColorVar: "var(--topic-docker-border)",     color: "var(--topic-docker-text)" },
+  { key: "kubernetes", label: "Kubernetes", icon: Server,    bg: "var(--topic-kubernetes)", borderColorVar: "var(--topic-kubernetes-border)", color: "var(--topic-kubernetes-text)" },
+  { key: "linux",      label: "Linux",      icon: Monitor,   bg: "var(--topic-linux)",      borderColorVar: "var(--topic-linux-border)",      color: "var(--topic-linux-text)" },
+  { key: "git",        label: "Git",        icon: GitBranch, bg: "var(--topic-git)",        borderColorVar: "var(--topic-git-border)",        color: "var(--topic-git-text)" },
+  { key: "jenkins",    label: "Jenkins",    icon: Infinity,  bg: "var(--topic-jenkins)",    borderColorVar: "var(--topic-jenkins-border)",    color: "var(--topic-jenkins-text)" },
+  { key: "terraform",  label: "Terraform",  icon: Layers,    bg: "var(--topic-terraform)",  borderColorVar: "var(--topic-terraform-border)",  color: "var(--topic-terraform-text)" },
+  { key: "nginx",      label: "Nginx",      icon: Globe,     bg: "var(--topic-nginx)",      borderColorVar: "var(--topic-nginx-border)",      color: "var(--topic-nginx-text)" },
 ];
 
 export default function ModulesPage() {
@@ -42,19 +45,19 @@ export default function ModulesPage() {
           </div>
 
           {!loading && !error && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
-              {topicStats.map(({ key, label, icon: Icon, bg, border, color }) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 mt-8 max-w-4xl">
+              {topicStats.map(({ key, label, icon: Icon, bg, borderColorVar, color }) => (
                 <div
                   key={key}
-                  className="rounded-xl border p-4 flex items-center gap-3 shadow-sm hover:scale-[1.01] transition-transform duration-200"
-                  style={{ backgroundColor: bg, borderColor: border }}
+                  className="rounded-2xl border p-6 flex flex-col items-center justify-center text-center gap-3 aspect-square shadow-sm hover:scale-[1.02] transition-transform duration-200"
+                  style={{ backgroundColor: bg, borderColor: borderColorVar }}
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-background/50 border border-border/10">
-                    <Icon className="h-4 w-4" style={{ color }} />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-background/50 border border-border/10">
+                    <Icon className="h-6 w-6" style={{ color }} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold" style={{ color }}>{label}</p>
-                    <p className="text-lg font-black text-foreground">{countByTopic(key)}</p>
+                    <p className="text-xs font-bold font-mono tracking-wide uppercase" style={{ color }}>{label}</p>
+                    <p className="text-3xl font-black text-foreground mt-1">{countByTopic(key)}</p>
                   </div>
                 </div>
               ))}
