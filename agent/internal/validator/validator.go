@@ -36,8 +36,20 @@ func Run(labID, sectionID, scriptPath, deviceKeyPath string) (*Result, error) {
 
 	os.Chmod(scriptPath, 0755)
 
-	cmd := exec.Command("/bin/bash", scriptPath)
-	cmd.Dir = filepath.Dir(scriptPath)
+	var cmd *exec.Cmd
+	labDir := filepath.Dir(scriptPath)
+
+	if strings.HasSuffix(scriptPath, ".py") {
+		pythonBin, err := GetPythonInterpreter(labDir)
+		if err != nil {
+			return nil, fmt.Errorf("python environment error: %w", err)
+		}
+		cmd = exec.Command(pythonBin, scriptPath)
+	} else {
+		cmd = exec.Command("/bin/bash", scriptPath)
+	}
+
+	cmd.Dir = labDir
 	outBytes, err := cmd.CombinedOutput()
 	output := strings.TrimSpace(string(outBytes))
 	passed := err == nil
@@ -56,6 +68,57 @@ func Run(labID, sectionID, scriptPath, deviceKeyPath string) (*Result, error) {
 	}
 	result.Signature = sign(result, key)
 	return result, nil
+}
+
+func GetPythonInterpreter(labDir string) (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("user home dir: %w", err)
+	}
+	venvPath := filepath.Join(home, ".tld", "venv")
+	pythonBin := filepath.Join(venvPath, "bin", "python3")
+	pipBin := filepath.Join(venvPath, "bin", "pip")
+
+	if filepath.Separator == '\\' {
+		pythonBin = filepath.Join(venvPath, "Scripts", "python.exe")
+		pipBin = filepath.Join(venvPath, "Scripts", "pip.exe")
+	}
+
+	// 1. Check if venv exists, if not create it
+	if _, err := os.Stat(pythonBin); os.IsNotExist(err) {
+		fmt.Println("🐍 Bootstrapping Python virtual environment (~/.tld/venv)...")
+		if err := os.MkdirAll(venvPath, 0755); err != nil {
+			return "", fmt.Errorf("create venv dir: %w", err)
+		}
+		if _, err := exec.LookPath("python3"); err != nil {
+			return "", fmt.Errorf("python3 is not installed or not in PATH — please install Python to run this lab")
+		}
+		cmd := exec.Command("python3", "-m", "venv", venvPath)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return "", fmt.Errorf("failed to create virtual environment: %w\n%s", err, string(out))
+		}
+		fmt.Println("  ✓ Virtual environment ready.")
+	}
+
+	// 2. Check for requirements.txt in labDir
+	reqPath := filepath.Join(labDir, "requirements.txt")
+	if _, err := os.Stat(reqPath); err == nil {
+		markerPath := filepath.Join(venvPath, fmt.Sprintf(".installed-%s", filepath.Base(labDir)))
+		reqInfo, _ := os.Stat(reqPath)
+		markerInfo, markerErr := os.Stat(markerPath)
+
+		if markerErr != nil || reqInfo.ModTime().After(markerInfo.ModTime()) {
+			fmt.Println("📦 Installing lab requirements...")
+			cmd := exec.Command(pipBin, "install", "-r", reqPath)
+			if out, err := cmd.CombinedOutput(); err != nil {
+				return "", fmt.Errorf("failed to install requirements: %w\n%s", err, string(out))
+			}
+			os.WriteFile(markerPath, []byte(time.Now().String()), 0644)
+			fmt.Println("  ✓ Dependencies verified.")
+		}
+	}
+
+	return pythonBin, nil
 }
 
 // sign produces an HMAC-SHA256 over the result fields (excluding Signature).

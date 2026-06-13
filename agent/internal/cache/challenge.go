@@ -218,7 +218,13 @@ func loadLab(baseDir, moduleID, sectionID, labID string) (*Lab, error) {
 	if lab.ResourcesMem == 0 {
 		lab.ResourcesMem = 512
 	}
-	lab.ValidatorPath = filepath.Join(labDir, "validator.sh")
+	shPath := filepath.Join(labDir, "validator.sh")
+	pyPath := filepath.Join(labDir, "validator.py")
+	if _, err := os.Stat(pyPath); err == nil {
+		lab.ValidatorPath = pyPath
+	} else {
+		lab.ValidatorPath = shPath
+	}
 	return lab, nil
 }
 

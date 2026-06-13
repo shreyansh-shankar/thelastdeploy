@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/thelastdeploy/agent/internal/cache"
+	"github.com/thelastdeploy/agent/internal/validator"
 )
 
 // Start sets up the lab environment. Non-blocking — returns immediately
@@ -74,6 +76,39 @@ func Stop() error {
 	fmt.Printf("Stopping lab: %s\n", session.LabID)
 	elapsed := time.Since(session.StartedAt).Round(time.Second)
 	fmt.Printf("Session duration: %s\n\n", elapsed)
+
+	if session.ValidatorPath != "" {
+		labDir := filepath.Dir(session.ValidatorPath)
+
+		// 1. cleanup.sh
+		cleanupSh := filepath.Join(labDir, "cleanup.sh")
+		if _, err := os.Stat(cleanupSh); err == nil {
+			fmt.Println("🧹 Running cleanup script (cleanup.sh)...")
+			os.Chmod(cleanupSh, 0755)
+			if err := runShellCommand(cleanupSh); err != nil {
+				fmt.Fprintf(os.Stderr, "warn: cleanup.sh failed: %v\n", err)
+			}
+		}
+
+		// 2. cleanup.py
+		cleanupPy := filepath.Join(labDir, "cleanup.py")
+		if _, err := os.Stat(cleanupPy); err == nil {
+			fmt.Println("🧹 Running cleanup script (cleanup.py)...")
+			os.Chmod(cleanupPy, 0755)
+			pythonBin, err := validator.GetPythonInterpreter(labDir)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "warn: failed to get Python environment for cleanup: %v. Falling back to system python3.\n", err)
+				pythonBin = "python3"
+			}
+			cmd := exec.Command(pythonBin, cleanupPy)
+			cmd.Dir = labDir
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				fmt.Fprintf(os.Stderr, "warn: cleanup.py failed: %v\n", err)
+			}
+		}
+	}
 
 	switch session.SetupType {
 	case "docker":
