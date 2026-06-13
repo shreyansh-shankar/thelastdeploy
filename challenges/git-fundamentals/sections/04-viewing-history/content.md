@@ -18,3 +18,19 @@ Each entry shows:
 # View last 3 commits briefly
 git log --oneline -n 3
 ```
+
+---
+
+## Lab Tasks
+
+### Task 1: Inspect Repository Log
+1. Start the lab in your terminal:
+   ```bash
+   tld start git-inspect-history
+   ```
+2. Find the full 40-character commit hash of the latest commit in the `~/git-challenge` repository.
+3. Save this commit hash (without any other text) to a file named `latest_commit.txt` in the `~/git-challenge` directory.
+4. Verify the task to earn your XP:
+   ```bash
+   tld check
+   ```

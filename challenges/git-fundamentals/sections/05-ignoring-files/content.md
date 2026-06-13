@@ -18,3 +18,19 @@ dist/
 # Ignore files in a specific directory
 logs/*.txt
 ```
+
+---
+
+## Lab Tasks
+
+### Task 1: Configure Git Ignore List
+1. Start the lab in your terminal:
+   ```bash
+   tld start git-configure-gitignore
+   ```
+2. Create or edit a `.gitignore` file inside the `~/git-challenge` directory.
+3. Configure it to ignore all files ending in `.log` (e.g., `*.log`).
+4. Verify the task to earn your XP:
+   ```bash
+   tld check
+   ```

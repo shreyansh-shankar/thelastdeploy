@@ -18,3 +18,29 @@ Saves the staged snapshot of files to the local repository database. Always writ
 ```bash
 git commit -m "Initialize project with README document"
 ```
+
+---
+
+## Lab Tasks
+
+### Task 1: Stage a Modified File
+1. Start the lab in your terminal:
+   ```bash
+   tld start git-stage-file
+   ```
+2. Add the existing `README.md` file in the `~/git-challenge` directory to the Git staging area (index) without committing it.
+3. Verify the task to earn your XP:
+   ```bash
+   tld check
+   ```
+
+### Task 2: Commit Your Staged Changes
+1. Start the lab in your terminal:
+   ```bash
+   tld start git-commit-changes
+   ```
+2. Commit the staged `README.md` changes to the repository in `~/git-challenge`. Ensure the working tree is clean.
+3. Verify the task:
+   ```bash
+   tld check
+   ```

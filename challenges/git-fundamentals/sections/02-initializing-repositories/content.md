@@ -11,3 +11,18 @@ git init
 # Or initialize a repository inside a specific directory
 git init my-project
 ```
+
+---
+
+## Lab Tasks
+
+### Task 1: Initialize a New Repository
+1. Start the lab in your terminal:
+   ```bash
+   tld start git-create-repository
+   ```
+2. Initialize a Git repository inside the `~/git-challenge` directory.
+3. Verify the task to earn your XP:
+   ```bash
+   tld check
+   ```
