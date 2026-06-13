@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,7 +35,7 @@ func Run(labID, sectionID, scriptPath, deviceKeyPath string) (*Result, error) {
 		return nil, fmt.Errorf("validator script not found: %s", scriptPath)
 	}
 
-	valHash, err := sha256Sum(scriptPath)
+	valHash, err := Sha256Sum(scriptPath)
 	if err != nil {
 		return nil, fmt.Errorf("calculate validator hash: %w", err)
 	}
@@ -78,17 +77,20 @@ func Run(labID, sectionID, scriptPath, deviceKeyPath string) (*Result, error) {
 	return result, nil
 }
 
-func sha256Sum(path string) (string, error) {
-	f, err := os.Open(path)
+func Sha256Sum(path string) (string, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	// Normalize CRLF to LF
+	normalized := strings.ReplaceAll(string(data), "\r\n", "\n")
+	// Trim trailing whitespace/newlines
+	normalized = strings.TrimRightFunc(normalized, func(r rune) bool {
+		return r == '\n' || r == '\r' || r == ' ' || r == '\t'
+	})
 
 	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
+	h.Write([]byte(normalized))
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 

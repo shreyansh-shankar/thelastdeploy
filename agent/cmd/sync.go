@@ -4,6 +4,8 @@ package cmd
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +19,7 @@ import (
 	"github.com/thelastdeploy/agent/internal/cache"
 	"github.com/thelastdeploy/agent/internal/config"
 	"github.com/thelastdeploy/agent/internal/queue"
+	"github.com/thelastdeploy/agent/internal/validator"
 )
 
 // modulesResponse matches GET /modules
@@ -303,7 +306,7 @@ func syncFromGitHub(repo string, challengesDir string, targetModule string, targ
 		}
 
 		// Smart differential sync: skip extraction if local version matches zip version
-		if !shouldExtractFile(relParts, challengesDir, zipModuleVersions, zipSectionVersions, zipLabVersions) {
+		if !shouldExtractFile(file, relParts, challengesDir, zipModuleVersions, zipSectionVersions, zipLabVersions) {
 			syncedModules[moduleID] = true
 			continue
 		}
@@ -497,7 +500,25 @@ func syncLocalSections(moduleID, challengesDir, parentSection, targetLab string)
 			// Smart version check: only copy lab files if version changed
 			srcLabYAML := filepath.Join(srcLabsDir, l.Name(), "lab.yaml")
 			dstLabYAML := filepath.Join(challengesDir, moduleID, "sections", sec.Name(), "labs", l.Name(), "lab.yaml")
-			if getLocalYAMLVersion(srcLabYAML) != getLocalYAMLVersion(dstLabYAML) {
+			needSync := getLocalYAMLVersion(srcLabYAML) != getLocalYAMLVersion(dstLabYAML)
+			if !needSync {
+				// If versions match, verify if the validator script was modified locally
+				srcValPath := filepath.Join(srcLabsDir, l.Name(), "validator.sh")
+				if _, err := os.Stat(srcValPath); os.IsNotExist(err) {
+					srcValPath = filepath.Join(srcLabsDir, l.Name(), "validator.py")
+				}
+				dstValPath := filepath.Join(challengesDir, moduleID, "sections", sec.Name(), "labs", l.Name(), "validator.sh")
+				if _, err := os.Stat(dstValPath); os.IsNotExist(err) {
+					dstValPath = filepath.Join(challengesDir, moduleID, "sections", sec.Name(), "labs", l.Name(), "validator.py")
+				}
+
+				srcHash, _ := validator.Sha256Sum(srcValPath)
+				dstHash, _ := validator.Sha256Sum(dstValPath)
+				if srcHash != "" && srcHash != dstHash {
+					needSync = true
+				}
+			}
+			if needSync {
 				syncLabFiles(moduleID, sec.Name(), l.Name(), challengesDir)
 			}
 		}
@@ -623,7 +644,7 @@ func readZipFileContents(file *zip.File) ([]byte, error) {
 	return io.ReadAll(rc)
 }
 
-func shouldExtractFile(relParts []string, challengesDir string, zipModuleVersions, zipSectionVersions, zipLabVersions map[string]int) bool {
+func shouldExtractFile(file *zip.File, relParts []string, challengesDir string, zipModuleVersions, zipSectionVersions, zipLabVersions map[string]int) bool {
 	if len(relParts) == 0 {
 		return false
 	}
@@ -640,6 +661,31 @@ func shouldExtractFile(relParts []string, challengesDir string, zipModuleVersion
 			zipVer = 1
 		}
 		localVer := getLocalYAMLVersion(localLabYAMLPath)
+
+		// If it's the validator file, verify its integrity hash
+		if len(relParts) == 6 && (relParts[5] == "validator.sh" || relParts[5] == "validator.py") {
+			localValPath := filepath.Join(challengesDir, moduleID, "sections", sectionID, "labs", labID, relParts[5])
+			if _, err := os.Stat(localValPath); os.IsNotExist(err) {
+				return true // missing, must extract
+			}
+			zipData, err := readZipFileContents(file)
+			if err == nil {
+				// Normalize CRLF to LF and trim
+				normalizedZip := strings.ReplaceAll(string(zipData), "\r\n", "\n")
+				normalizedZip = strings.TrimRightFunc(normalizedZip, func(r rune) bool {
+					return r == '\n' || r == '\r' || r == ' ' || r == '\t'
+				})
+				hZip := sha256.New()
+				hZip.Write([]byte(normalizedZip))
+				zipHash := hex.EncodeToString(hZip.Sum(nil))
+
+				localHash, err := validator.Sha256Sum(localValPath)
+				if err != nil || localHash != zipHash {
+					return true // hash mismatch, force extract
+				}
+			}
+		}
+
 		return zipVer != localVer
 	}
 

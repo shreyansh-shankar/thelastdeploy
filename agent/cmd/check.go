@@ -49,7 +49,13 @@ func runCheck(args []string) error {
 	tldDir := filepath.Dir(cfg.DeviceKeyPath)
 	err, retry := postResult(cfg.APIBaseURL, cfg.AuthToken, session.LabID, session.SectionID, result)
 	if err != nil {
-		fmt.Printf("\n(Submission failed: %v)\n", err)
+		if strings.Contains(err.Error(), "Validator script mismatch") {
+			fmt.Println("\n⚠️  INTEGRITY ERROR: Validator script mismatch!")
+			fmt.Println("   The local validator script has been modified or is out of date.")
+			fmt.Println("   To restore the official version, please run: tld sync")
+		} else {
+			fmt.Printf("\n(Submission failed: %v)\n", err)
+		}
 		if retry {
 			entry := &queue.Entry{
 				LabID:         session.LabID,
@@ -67,7 +73,9 @@ func runCheck(args []string) error {
 				fmt.Println("Result queued — will sync automatically next time you run 'tld sync --all'.")
 			}
 		} else {
-			fmt.Println("Your pass was NOT saved because the request was rejected by the server.")
+			if !strings.Contains(err.Error(), "Validator script mismatch") {
+				fmt.Println("Your pass was NOT saved because the request was rejected by the server.")
+			}
 		}
 	}
 	return nil

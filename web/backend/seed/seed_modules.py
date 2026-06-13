@@ -133,11 +133,11 @@ async def seed():
                     val_path = py_path if os.path.exists(py_path) else (sh_path if os.path.exists(sh_path) else None)
                     if val_path:
                         import hashlib
-                        h = hashlib.sha256()
                         with open(val_path, "rb") as f:
-                            while chunk := f.read(8192):
-                                h.update(chunk)
-                        validator_hash = h.hexdigest()
+                            content = f.read()
+                        # Normalize CRLF to LF and strip trailing whitespaces/newlines
+                        content_normalized = content.replace(b"\r\n", b"\n").rstrip()
+                        validator_hash = hashlib.sha256(content_normalized).hexdigest()
 
                     # seed_commands is a list in YAML → store as JSON string
                     seed_commands = lab_data.get("seed_commands", [])
