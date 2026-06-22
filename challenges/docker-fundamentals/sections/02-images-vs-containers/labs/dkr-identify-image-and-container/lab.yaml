@@ -1,0 +1,13 @@
+id: dkr-identify-image-and-container
+title: "Identify image and container"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker pull hello-world:latest || true"
+    - "docker rm -f ident-target-container || true"
+    - "docker run --name ident-target-container hello-world || true"
+    - "mkdir -p $HOME/docker-test"
+    - "rm -f $HOME/docker-test/image_id.txt $HOME/docker-test/container_id.txt"
+version: 1

@@ -57,7 +57,6 @@ export default function ModulesPage() {
                   </div>
                   <div>
                     <p className="text-xs font-bold font-mono tracking-wide uppercase" style={{ color }}>{label}</p>
-                    <p className="text-3xl font-black text-foreground mt-1">{countByTopic(key)}</p>
                   </div>
                 </div>
               ))}

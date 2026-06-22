@@ -7,4 +7,4 @@ setup:
   seed_commands: []
   resource_limits_cpu: 1
   resource_limits_mem: 512
-version: 1
+version: 2

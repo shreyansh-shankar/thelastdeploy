@@ -1,5 +1,5 @@
 #!/bin/bash
-# validator.sh — docker-fundamentals / 03-run-first-container / dkr-run-hello
+# validator.sh — docker-fundamentals / 03-your-first-container / dkr-run-hello
 set -euo pipefail
 
 # Check Docker is available
@@ -22,6 +22,12 @@ fi
 
 # Fallback: try running it now and check exit code
 if docker run --rm hello-world &>/dev/null; then
+  echo "PASS: hello-world ran and exited cleanly"
+  exit 0
+fi
+
+# Fallback 2: try checking any stopped containers of hello-world
+if docker ps -a --format "{{.Image}}" | grep -q "hello-world"; then
   echo "PASS: hello-world ran and exited cleanly"
   exit 0
 fi

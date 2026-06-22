@@ -1,0 +1,10 @@
+id: dkr-start-stopped-container
+title: "Start a stopped container"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f stopped-sleeper || true"
+    - "docker create --name stopped-sleeper alpine sleep 1000"
+version: 1

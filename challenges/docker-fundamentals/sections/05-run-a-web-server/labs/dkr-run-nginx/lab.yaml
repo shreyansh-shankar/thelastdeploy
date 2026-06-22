@@ -1,0 +1,9 @@
+id: dkr-run-nginx
+title: "Run an Nginx container"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f my-nginx-server || true"
+version: 1
