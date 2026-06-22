@@ -1,0 +1,16 @@
+id: dkr-debug-connection-failure
+title: "Debug connection failure"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f backend-service client-app || true"
+    - "docker network rm debug-net || true"
+    - "docker network create debug-net"
+    - "docker run -d --name backend-service --network debug-net nginx:alpine"
+    - "docker run -d --name client-app alpine sleep 1000"
+    - "docker exec client-app apk add --no-cache curl"
+    - "mkdir -p $HOME/docker-test"
+    - "rm -f $HOME/docker-test/debug_output.txt"
+version: 2

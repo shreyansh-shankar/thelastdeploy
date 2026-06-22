@@ -1,0 +1,16 @@
+id: dkr-connect-two-containers
+title: "Connect two containers"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f server-target client-source || true"
+    - "docker network rm lab-net || true"
+    - "docker network create lab-net"
+    - "docker run -d --name server-target --network lab-net nginx:alpine"
+    - "docker run -d --name client-source --network lab-net alpine sleep 1000"
+    - "docker exec client-source apk add --no-cache curl"
+    - "mkdir -p $HOME/docker-test"
+    - "rm -f $HOME/docker-test/fetched_page.txt"
+version: 2

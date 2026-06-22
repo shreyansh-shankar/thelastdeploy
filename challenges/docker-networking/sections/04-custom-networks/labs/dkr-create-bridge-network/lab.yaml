@@ -1,0 +1,9 @@
+id: dkr-create-bridge-network
+title: "Create a bridge network"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker network rm custom-bridge-net || true"
+version: 1

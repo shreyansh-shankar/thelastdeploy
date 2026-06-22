@@ -1,0 +1,12 @@
+id: dkr-attach-container-network
+title: "Attach container to network"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f isolated-app || true"
+    - "docker run -d --name isolated-app alpine sleep 1000"
+    - "docker network rm production-net || true"
+    - "docker network create production-net"
+version: 1

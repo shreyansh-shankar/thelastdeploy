@@ -1,0 +1,12 @@
+id: dkr-fix-broken-container-network
+title: "Fix broken container network"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f broken-web || true"
+    - "docker network rm web-net || true"
+    - "docker network create web-net"
+    - "docker run -d --name broken-web --network none nginx:alpine"
+version: 1
