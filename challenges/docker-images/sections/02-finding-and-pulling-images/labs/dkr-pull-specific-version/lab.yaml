@@ -1,0 +1,9 @@
+id: dkr-pull-specific-version
+title: "Pull specific version"
+xp: 15
+estimated_minutes: 3
+setup:
+  type: shell
+  seed_commands:
+    - "docker rmi -f nginx:1.21.6 || true"
+version: 1

@@ -1,0 +1,11 @@
+id: dkr-create-first-dockerfile
+title: "Create first Dockerfile"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/docker-build/first-dockerfile"
+    - "rm -f $HOME/docker-build/first-dockerfile/Dockerfile"
+    - "docker rmi -f test-first-df || true"
+version: 1

@@ -1,0 +1,11 @@
+id: dkr-find-image-metadata
+title: "Find image metadata"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker pull alpine:3.18.5"
+    - "mkdir -p $HOME/docker-test"
+    - "rm -f $HOME/docker-test/image_arch.txt"
+version: 1

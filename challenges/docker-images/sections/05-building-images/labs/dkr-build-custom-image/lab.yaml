@@ -1,0 +1,12 @@
+id: dkr-build-custom-image
+title: "Build a custom image"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/docker-build/custom-app"
+    - "echo 'FROM alpine:3.18' > $HOME/docker-build/custom-app/Dockerfile"
+    - "echo 'CMD [\"echo\", \"Custom App Running\"]' >> $HOME/docker-build/custom-app/Dockerfile"
+    - "docker rmi -f my-custom-app:v1.0 || true"
+version: 1
