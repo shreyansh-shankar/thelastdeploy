@@ -32,6 +32,32 @@ async def seed():
 
             module_id = module_data["id"]
 
+            # ── Precompute totals ──────────────────────────────────────
+            total_sections = 0
+            total_xp = 0
+            sections_dir = os.path.join(module_path, "sections")
+            if os.path.isdir(sections_dir):
+                for section_dir in sorted(os.listdir(sections_dir)):
+                    section_path = os.path.join(sections_dir, section_dir)
+                    section_yaml_path = os.path.join(section_path, "section.yaml")
+                    if not os.path.isdir(section_path) or not os.path.exists(section_yaml_path):
+                        continue
+                    with open(section_yaml_path) as f:
+                        section_data = yaml.safe_load(f)
+                    total_sections += 1
+                    total_xp += section_data.get("xp", 10)
+
+                    labs_dir = os.path.join(section_path, "labs")
+                    if os.path.isdir(labs_dir):
+                        for lab_dir in sorted(os.listdir(labs_dir)):
+                            lab_path = os.path.join(labs_dir, lab_dir)
+                            lab_yaml_path = os.path.join(lab_path, "lab.yaml")
+                            if not os.path.isdir(lab_path) or not os.path.exists(lab_yaml_path):
+                                continue
+                            with open(lab_yaml_path) as f:
+                                lab_data = yaml.safe_load(f)
+                            total_xp += lab_data.get("xp", 0)
+
             # ── Upsert Module ──────────────────────────────────────────
             result = await db.execute(select(Module).where(Module.id == module_id))
             existing_module = result.scalar_one_or_none()
@@ -46,8 +72,10 @@ async def seed():
                 existing_module.tags = tags
                 existing_module.yaml_content = raw_yaml
                 existing_module.version = module_data.get("version", 1)
+                existing_module.total_xp = total_xp
+                existing_module.total_sections = total_sections
                 db.add(existing_module)
-                print(f"  ↻ Updated module: {module_id}")
+                print(f"  ↻ Updated module: {module_id} (total_xp: {total_xp}, total_sections: {total_sections})")
             else:
                 db.add(Module(
                     id=module_id,
@@ -59,8 +87,10 @@ async def seed():
                     tags=tags,
                     yaml_content=raw_yaml,
                     version=module_data.get("version", 1),
+                    total_xp=total_xp,
+                    total_sections=total_sections,
                 ))
-                print(f"  ✅ Seeded module: {module_id}")
+                print(f"  ✅ Seeded module: {module_id} (total_xp: {total_xp}, total_sections: {total_sections})")
 
             # ── Sections ───────────────────────────────────────────────
             sections_dir = os.path.join(module_path, "sections")

@@ -31,52 +31,50 @@ async def list_modules(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
-    from sqlalchemy.orm import selectinload
-
-    # 1. Eagerly load all modules, sections, and labs in 1-3 database queries
-    result = await db.execute(
-        select(Module).options(
-            selectinload(Module.sections).selectinload(Section.labs)
+    # 1. Scalar subquery for completed sections for the current user
+    completed_sections_sub = (
+        select(func.count(SectionProgress.id))
+        .where(
+            SectionProgress.module_id == Module.id,
+            SectionProgress.user_id == current_user.id,
+            SectionProgress.completed == True
         )
+        .scalar_subquery()
+    ) if current_user else select(0).scalar_subquery()
+
+    # 2. Query only Module table columns + the progress subquery
+    stmt = select(
+        Module.id,
+        Module.title,
+        Module.description,
+        Module.topic,
+        Module.difficulty,
+        Module.estimated_minutes,
+        Module.tags,
+        Module.total_xp,
+        Module.total_sections,
+        Module.version,
+        completed_sections_sub.label("completed_sections")
     )
-    modules = result.scalars().all()
-
-    # 2. Retrieve user's completed section progress globally (1 query instead of N)
-    completed_section_ids = set()
-    if current_user:
-        sp_result = await db.execute(
-            select(SectionProgress.section_id).where(
-                SectionProgress.user_id == current_user.id,
-                SectionProgress.completed == True,
-            )
-        )
-        completed_section_ids = {row[0] for row in sp_result.fetchall()}
+    result = await db.execute(stmt)
+    rows = result.all()
 
     # 3. Build ModuleListItem list
     items = []
-    for m in modules:
-        # Since sections and labs are eager-loaded, we avoid any extra queries
-        sections = m.sections
-        all_labs = [lab for sec in sections for lab in sec.labs]
-
-        completed_sections = 0
-        for section in sections:
-            if section.id in completed_section_ids:
-                completed_sections += 1
-
-        tags = [t.strip() for t in (m.tags or "").split(",") if t.strip()]
+    for row in rows:
+        tags = [t.strip() for t in (row.tags or "").split(",") if t.strip()]
         items.append(ModuleListItem(
-            id=m.id,
-            title=m.title,
-            description=m.description,
-            topic=m.topic,
-            difficulty=m.difficulty,
-            estimated_minutes=m.estimated_minutes,
+            id=row.id,
+            title=row.title,
+            description=row.description,
+            topic=row.topic,
+            difficulty=row.difficulty,
+            estimated_minutes=row.estimated_minutes,
             tags=tags,
-            total_xp=_total_xp(sections, all_labs),
-            total_sections=len(sections),
-            completed_sections=completed_sections,
-            version=m.version,
+            total_xp=row.total_xp,
+            total_sections=row.total_sections,
+            completed_sections=row.completed_sections,
+            version=row.version,
         ))
 
     return ModuleListResponse(modules=items)
