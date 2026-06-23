@@ -1,0 +1,11 @@
+id: dkr-share-host-directory
+title: "Share host directory"
+xp: 15
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/docker-share"
+    - "echo '<h1>Welcome to Bind Mounts</h1>' > $HOME/docker-share/index.html"
+    - "docker rm -f nginx-mount || true"
+version: 1

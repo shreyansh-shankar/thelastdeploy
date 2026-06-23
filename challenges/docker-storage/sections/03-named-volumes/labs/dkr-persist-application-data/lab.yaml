@@ -1,0 +1,11 @@
+id: dkr-persist-application-data
+title: "Persist application data"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f db-container db-container-new || true"
+    - "docker volume rm db-storage-vol || true"
+    - "docker volume create db-storage-vol"
+version: 1

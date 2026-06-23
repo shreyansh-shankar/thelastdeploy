@@ -1,0 +1,16 @@
+id: dkr-restore-application-data
+title: "Restore application data"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker volume rm -f restored-db-vol || true"
+    - "docker volume create restored-db-vol"
+    - "mkdir -p $HOME/docker-restore-source"
+    - "rm -f $HOME/docker-restore-source/backup.tar"
+    - "mkdir -p /tmp/restore-seed"
+    - 'echo "{\"status\": \"restored\", \"version\": 3}" > /tmp/restore-seed/db_state.json'
+    - "tar -cvf $HOME/docker-restore-source/backup.tar -C /tmp/restore-seed db_state.json"
+    - "rm -rf /tmp/restore-seed"
+version: 3

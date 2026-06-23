@@ -1,0 +1,13 @@
+id: dkr-backup-volume
+title: "Backup volume"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "docker volume rm -f prod-db-vol || true"
+    - "docker volume create prod-db-vol"
+    - "docker run --rm -v prod-db-vol:/data alpine sh -c 'echo \"Secret Database Content v2\" > /data/important_backup_data.txt'"
+    - "mkdir -p $HOME/docker-backup"
+    - "rm -f $HOME/docker-backup/backup.tar"
+version: 1

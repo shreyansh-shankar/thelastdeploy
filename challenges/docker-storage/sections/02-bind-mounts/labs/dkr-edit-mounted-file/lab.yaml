@@ -1,0 +1,12 @@
+id: dkr-edit-mounted-file
+title: "Edit a mounted file"
+xp: 15
+estimated_minutes: 5
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/docker-mount-test"
+    - "echo 'Initial Note' > $HOME/docker-mount-test/notes.txt"
+    - "docker rm -f notes-viewer || true"
+    - "docker run -d --name notes-viewer -v $HOME/docker-mount-test:/notes alpine tail -f /dev/null"
+version: 1
