@@ -2,17 +2,18 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function LoginPage() {
+function LoginContent() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +29,10 @@ export default function LoginPage() {
     try {
       const { access_token, device_key } = await api.login(email, password);
       await login(access_token, device_key);
-      router.push("/dashboard");
+      
+      // Handle redirect parameter if present
+      const redirect = searchParams.get("redirect") || "/dashboard";
+      router.push(redirect);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -137,5 +141,19 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+          <div className="text-muted-foreground animate-pulse text-sm">Loading login...</div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

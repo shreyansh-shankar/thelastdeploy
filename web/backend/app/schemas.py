@@ -36,6 +36,19 @@ class ResendVerificationRequest(BaseModel):
 class MessageResponse(BaseModel):
     detail: str
 
+class CLIDeviceCodeResponse(BaseModel):
+    device_code: str
+    user_code: str
+    verification_uri: str
+    expires_in: int
+    interval: int
+
+class CLIAuthorizeRequest(BaseModel):
+    user_code: str
+
+class CLITokenRequest(BaseModel):
+    device_code: str
+
 
 # --- Labs ---
 

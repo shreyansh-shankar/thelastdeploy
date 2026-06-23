@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -10,13 +9,20 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
-	"syscall"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/thelastdeploy/agent/internal/config"
-	"golang.org/x/term"
 )
+
+type DeviceCodeResponse struct {
+	DeviceCode      string `json:"device_code"`
+	UserCode        string `json:"user_code"`
+	VerificationURI string `json:"verification_uri"`
+	ExpiresIn       int    `json:"expires_in"`
+	Interval        int    `json:"interval"`
+}
 
 func runLogin(args []string) error {
 	cfg, err := config.Load()
@@ -24,98 +30,140 @@ func runLogin(args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	// ── Collect credentials ──────────────────────────────────────────────
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Email: ")
-	email, err := reader.ReadString('\n')
-	if err != nil {
-		return fmt.Errorf("read email: %w", err)
-	}
-	email = strings.TrimSpace(email)
-	if email == "" {
-		return errors.New("email cannot be empty")
-	}
-
-	fmt.Print("Password: ")
-	var password string
-	if term.IsTerminal(int(syscall.Stdin)) {
-		pwBytes, err := term.ReadPassword(int(syscall.Stdin))
-		fmt.Println()
-		if err != nil {
-			return fmt.Errorf("read password: %w", err)
-		}
-		password = string(pwBytes)
-	} else {
-		password, err = reader.ReadString('\n')
-		if err != nil {
-			return fmt.Errorf("read password: %w", err)
-		}
-		password = strings.TrimSpace(password)
-	}
-	if password == "" {
-		return errors.New("password cannot be empty")
-	}
-
-	// ── POST /login ──────────────────────────────────────────────────────
-	payload, _ := json.Marshal(map[string]string{
-		"email":    email,
-		"password": password,
-	})
-
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Post(cfg.APIBaseURL+"/login", "application/json", bytes.NewReader(payload))
+
+	// 1. Request device authorization codes from backend
+	fmt.Println("Requesting device authorization code...")
+	resp, err := client.Post(cfg.APIBaseURL+"/cli/device-code", "application/json", nil)
 	if err != nil {
 		return fmt.Errorf("could not reach API at %s: %w", cfg.APIBaseURL, err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read response: %w", err)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to get device code (HTTP %d): %s", resp.StatusCode, string(body))
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		var errBody map[string]interface{}
-		if json.Unmarshal(body, &errBody) == nil {
-			if detail, ok := errBody["detail"]; ok {
-				return fmt.Errorf("login failed: %v", detail)
+	var codeResp DeviceCodeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&codeResp); err != nil {
+		return fmt.Errorf("parse device code response: %w", err)
+	}
+
+	verificationURL := fmt.Sprintf("%s?code=%s", codeResp.VerificationURI, codeResp.UserCode)
+
+	fmt.Printf("\nTo authenticate the CLI with DevLab:\n")
+	fmt.Printf("  1. Navigate to: \x1b[36m%s\x1b[0m\n", verificationURL)
+	fmt.Printf("  2. Confirm permission using the User Code: \x1b[1;33m%s\x1b[0m\n\n", codeResp.UserCode)
+
+	// Attempt to open browser automatically
+	openBrowser(verificationURL)
+
+	// 2. Poll /cli/token for verification success
+	pollInterval := time.Duration(codeResp.Interval) * time.Second
+	if pollInterval <= 0 {
+		pollInterval = 3 * time.Second
+	}
+
+	expiresIn := time.Duration(codeResp.ExpiresIn) * time.Second
+	if expiresIn <= 0 {
+		expiresIn = 300 * time.Second
+	}
+
+	startTime := time.Now()
+	payload, _ := json.Marshal(map[string]string{
+		"device_code": codeResp.DeviceCode,
+	})
+
+	fmt.Println("Waiting for authorization in browser...")
+
+	for {
+		if time.Since(startTime) > expiresIn {
+			return errors.New("authorization request has expired; please run 'tld login' again")
+		}
+
+		time.Sleep(pollInterval)
+
+		tokenResp, err := client.Post(cfg.APIBaseURL+"/cli/token", "application/json", bytes.NewReader(payload))
+		if err != nil {
+			// Network error, just retry
+			continue
+		}
+		defer tokenResp.Body.Close()
+
+		body, err := io.ReadAll(tokenResp.Body)
+		if err != nil {
+			continue
+		}
+
+		if tokenResp.StatusCode == http.StatusOK {
+			// Success! Parse tokens
+			var loginResp struct {
+				AccessToken string `json:"access_token"`
+				TokenType   string `json:"token_type"`
+				DeviceKey   string `json:"device_key"`
+			}
+			if err := json.Unmarshal(body, &loginResp); err != nil {
+				return fmt.Errorf("parse token response: %w", err)
+			}
+
+			// Persist auth token
+			cfg.AuthToken = loginResp.AccessToken
+			if err := config.Save(cfg); err != nil {
+				return fmt.Errorf("save config: %w", err)
+			}
+
+			// If backend issued a device key, write it to ~/.tld/device.key
+			if loginResp.DeviceKey != "" {
+				if err := os.WriteFile(cfg.DeviceKeyPath, []byte(loginResp.DeviceKey), 0600); err != nil {
+					return fmt.Errorf("save device key: %w", err)
+				}
+				fmt.Printf("  Device key saved: %s\n", cfg.DeviceKeyPath)
+			}
+
+			fmt.Println("\n\x1b[32m✓ Logged in successfully!\x1b[0m")
+			fmt.Println("  Your results will now be tied to your account and XP will be awarded.")
+			return nil
+		}
+
+		if tokenResp.StatusCode == http.StatusBadRequest {
+			var errBody struct {
+				Error            string `json:"error"`
+				ErrorDescription string `json:"error_description"`
+			}
+			if err := json.Unmarshal(body, &errBody); err == nil {
+				switch errBody.Error {
+				case "authorization_pending":
+					// Continue polling
+					continue
+				case "slow_down":
+					pollInterval += 2 * time.Second
+					continue
+				case "expired_token":
+					return errors.New("authorization request has expired; please run 'tld login' again")
+				case "access_denied":
+					return errors.New("authorization was denied by the user")
+				default:
+					return fmt.Errorf("authentication error: %s (%s)", errBody.Error, errBody.ErrorDescription)
+				}
 			}
 		}
-		return fmt.Errorf("login failed (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
-	}
 
-	// ── Parse response ───────────────────────────────────────────────────
-	// Backend returns access_token AND device_key.
-	// device_key is a per-user secret the agent uses to sign validator results.
-	// Backend stores the same key and uses it to verify signatures.
-	var loginResp struct {
-		AccessToken string `json:"access_token"`
-		TokenType   string `json:"token_type"`
-		DeviceKey   string `json:"device_key"` // backend-issued, per-user signing key
+		return fmt.Errorf("server returned unexpected status code %d: %s", tokenResp.StatusCode, string(body))
 	}
-	if err := json.Unmarshal(body, &loginResp); err != nil {
-		return fmt.Errorf("unexpected response format: %w", err)
-	}
-	if loginResp.AccessToken == "" {
-		return errors.New("server returned an empty token — please try again")
-	}
+}
 
-	// ── Persist token and device key ─────────────────────────────────────
-	cfg.AuthToken = loginResp.AccessToken
-	if err := config.Save(cfg); err != nil {
-		return fmt.Errorf("save config: %w", err)
+func openBrowser(url string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
 	}
-
-	// If backend issued a device key, write it to ~/.tld/device.key
-	// This replaces any locally generated key so backend can verify signatures.
-	if loginResp.DeviceKey != "" {
-		if err := os.WriteFile(cfg.DeviceKeyPath, []byte(loginResp.DeviceKey), 0600); err != nil {
-			return fmt.Errorf("save device key: %w", err)
-		}
-		fmt.Printf("  Device key saved: %s\n", cfg.DeviceKeyPath)
+	if err == nil {
+		fmt.Println("  Opened default browser automatically...")
 	}
-
-	fmt.Printf("✓ Logged in as %s\n", email)
-	fmt.Println("  Your results will now be tied to your account and XP will be awarded.")
-	return nil
 }

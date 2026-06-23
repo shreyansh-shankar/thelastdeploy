@@ -27,6 +27,20 @@ class User(Base):
     section_progress: Mapped[list["SectionProgress"]] = relationship("SectionProgress", back_populates="user")
 
 
+class CLIDeviceAuth(Base):
+    __tablename__ = "cli_device_auths"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_code: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    user_code: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    user: Mapped["User | None"] = relationship("User")
+
+
 class Module(Base):
     __tablename__ = "modules"
 

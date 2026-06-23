@@ -88,6 +88,13 @@ export const api = {
     });
   },
 
+  cliAuthorize: async (userCode: string) => {
+    return request<{ detail: string }>("/cli/authorize", {
+      method: "POST",
+      body: JSON.stringify({ user_code: userCode }),
+    });
+  },
+
   logout: () => {
     clearDashboardCache();
     clearModulesMemoryCache();

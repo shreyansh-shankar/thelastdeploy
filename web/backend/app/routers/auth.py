@@ -1,12 +1,14 @@
 # web/backend/app/routers/auth.py
 
 import secrets
+import string
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.dependencies import get_db
-from app.models import User
+from app.dependencies import get_db, get_current_user
+from app.models import User, CLIDeviceAuth
 from app.auth import hash_password, verify_password, create_access_token
 from app.schemas import (
     RegisterRequest,
@@ -17,6 +19,9 @@ from app.schemas import (
     ResetPasswordRequest,
     ResendVerificationRequest,
     MessageResponse,
+    CLIDeviceCodeResponse,
+    CLIAuthorizeRequest,
+    CLITokenRequest,
 )
 from app.email import send_verification_email, send_reset_password_email
 
@@ -189,3 +194,152 @@ async def resend_verification(
     send_verification_email(user.email, verification_token, background_tasks)
 
     return MessageResponse(detail="Verification email sent. Please check your inbox.")
+
+
+@router.post("/cli/device-code", response_model=CLIDeviceCodeResponse)
+async def cli_device_code(db: AsyncSession = Depends(get_db)):
+    device_code = secrets.token_urlsafe(32)
+    
+    # Generate user_code (XXXX-XXXX format) avoiding ambiguous characters
+    chars = "".join(c for c in string.ascii_uppercase + string.digits if c not in "IO01")
+    code = "".join(secrets.choice(chars) for _ in range(8))
+    user_code = f"{code[:4]}-{code[4:]}"
+    
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    
+    device_auth = CLIDeviceAuth(
+        device_code=device_code,
+        user_code=user_code,
+        expires_at=expires_at,
+        status="pending",
+    )
+    db.add(device_auth)
+    await db.commit()
+    
+    from app.config import settings
+    verification_uri = f"{settings.FRONTEND_URL}/cli/verify"
+    
+    return CLIDeviceCodeResponse(
+        device_code=device_code,
+        user_code=user_code,
+        verification_uri=verification_uri,
+        expires_in=300,
+        interval=3,
+    )
+
+
+@router.post("/cli/authorize", response_model=MessageResponse)
+async def cli_authorize(
+    body: CLIAuthorizeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    normalized_code = body.user_code.strip().upper()
+    
+    result = await db.execute(
+        select(CLIDeviceAuth).where(CLIDeviceAuth.user_code == normalized_code)
+    )
+    device_auth = result.scalar_one_or_none()
+    
+    if not device_auth:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user authorization code.",
+        )
+        
+    expires_at = device_auth.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+    if expires_at < datetime.now(timezone.utc):
+        device_auth.status = "expired"
+        db.add(device_auth)
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This authorization code has expired.",
+        )
+        
+    if device_auth.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This authorization code has already been processed (status: {device_auth.status}).",
+        )
+        
+    device_auth.user_id = current_user.id
+    device_auth.status = "authorized"
+    db.add(device_auth)
+    await db.commit()
+    
+    return MessageResponse(
+        detail="CLI successfully authorized. You can return to your terminal."
+    )
+
+
+@router.post("/cli/token")
+async def cli_token(body: CLITokenRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(CLIDeviceAuth).where(CLIDeviceAuth.device_code == body.device_code)
+    )
+    device_auth = result.scalar_one_or_none()
+    
+    if not device_auth:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "invalid_grant", "error_description": "Device code not found."}
+        )
+        
+    expires_at = device_auth.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+    if expires_at < datetime.now(timezone.utc):
+        if device_auth.status == "pending":
+            device_auth.status = "expired"
+            db.add(device_auth)
+            await db.commit()
+        return JSONResponse(
+            status_code=400,
+            content={"error": "expired_token", "error_description": "The device code has expired."}
+        )
+        
+    if device_auth.status == "expired":
+        return JSONResponse(
+            status_code=400,
+            content={"error": "expired_token", "error_description": "The device code has expired."}
+        )
+        
+    if device_auth.status == "pending":
+        return JSONResponse(
+            status_code=400,
+            content={"error": "authorization_pending", "error_description": "Authorization is pending."}
+        )
+        
+    if device_auth.status == "completed":
+        return JSONResponse(
+            status_code=400,
+            content={"error": "invalid_grant", "error_description": "Device code already used."}
+        )
+        
+    if device_auth.status == "authorized":
+        user_result = await db.execute(select(User).where(User.id == device_auth.user_id))
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "invalid_grant", "error_description": "User not found."}
+            )
+            
+        _ensure_device_key(user)
+        
+        device_auth.status = "completed"
+        db.add(device_auth)
+        await db.commit()
+        
+        token = create_access_token(user.id)
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "device_key": user.device_key,
+        }
