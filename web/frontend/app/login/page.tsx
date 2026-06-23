@@ -17,10 +17,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setResendMessage(null);
     setLoading(true);
     try {
       const { access_token, device_key } = await api.login(email, password);
@@ -30,6 +33,20 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) return;
+    setResendLoading(true);
+    setResendMessage(null);
+    try {
+      const res = await api.resendVerification(email);
+      setResendMessage(res.detail);
+    } catch (err: unknown) {
+      setResendMessage(err instanceof Error ? err.message : "Failed to resend verification email");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -62,9 +79,14 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-muted-foreground/80 text-xs font-semibold uppercase tracking-wider">
-              Password
-            </Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="password" className="text-muted-foreground/80 text-xs font-semibold uppercase tracking-wider">
+                Password
+              </Label>
+              <Link href="/forgot-password" className="text-xs font-semibold hover:underline text-[var(--accent-primary)]">
+                Forgot password?
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"
@@ -77,8 +99,24 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
-              {error}
+            <div className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl flex flex-col gap-2">
+              <span>{error}</span>
+              {error.includes("verify your email") && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendLoading}
+                  className="text-left text-xs font-bold text-[var(--accent-primary)] underline hover:opacity-80 disabled:opacity-50 cursor-pointer"
+                >
+                  {resendLoading ? "Resending..." : "Resend verification email"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {resendMessage && (
+            <div className="text-sm text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 rounded-xl">
+              {resendMessage}
             </div>
           )}
 

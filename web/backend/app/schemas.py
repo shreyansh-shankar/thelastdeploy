@@ -20,6 +20,22 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     device_key: str
 
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+class MessageResponse(BaseModel):
+    detail: str
+
 
 # --- Labs ---
 

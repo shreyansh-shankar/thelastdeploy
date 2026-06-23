@@ -16,6 +16,10 @@ class User(Base):
     xp: Mapped[int] = mapped_column(Integer, default=0)
     streak_days: Mapped[int] = mapped_column(Integer, default=0)
     device_key: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    verification_token: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    reset_token: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    reset_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_active: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -45,12 +45,10 @@ async function warmCache(token: string): Promise<void> {
 export const api = {
   // Auth
   register: async (email: string, username: string, password: string) => {
-    const res = await request<{ access_token: string; device_key: string }>("/register", {
+    return request<{ detail: string }>("/register", {
       method: "POST",
       body: JSON.stringify({ email, username, password }),
     });
-    await warmCache(res.access_token);
-    return res;
   },
 
   login: async (email: string, password: string) => {
@@ -60,6 +58,34 @@ export const api = {
     });
     await warmCache(res.access_token);
     return res;
+  },
+
+  verifyEmail: async (token: string) => {
+    return request<{ detail: string }>("/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  forgotPassword: async (email: string) => {
+    return request<{ detail: string }>("/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    return request<{ detail: string }>("/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    });
+  },
+
+  resendVerification: async (email: string) => {
+    return request<{ detail: string }>("/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
   },
 
   logout: () => {

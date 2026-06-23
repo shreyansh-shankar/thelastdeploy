@@ -8,6 +8,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_DAYS: int = 7
     ENVIRONMENT: str = "development"
 
+    # Email Settings
+    RESEND_API_KEY: str | None = None
+    MAIL_FROM: str = "DevLab <onboarding@resend.dev>"
+    FRONTEND_URL: str = "http://localhost:3000"
+
     class Config:
         env_file = ".env"
 
