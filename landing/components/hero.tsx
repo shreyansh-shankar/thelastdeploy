@@ -1,0 +1,365 @@
+"use client";
+
+import CountdownTimer from "./countdown-timer";
+
+export default function Hero() {
+  return (
+    <section
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "120px 24px 80px",
+        overflow: "hidden",
+      }}
+    >
+      {/* ── Background layers ──────────────────── */}
+
+      {/* Deep space grid */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        backgroundImage: `
+          linear-gradient(rgba(34,197,94,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(34,197,94,0.04) 1px, transparent 1px)
+        `,
+        backgroundSize: "60px 60px",
+        maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 60%, transparent 110%)",
+        WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 60%, transparent 110%)",
+      }} />
+
+      {/* Primary glow orb */}
+      <div
+        className="animate-float-slow"
+        style={{
+          position: "absolute",
+          top: "10%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "600px",
+          height: "600px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.03) 50%, transparent 70%)",
+          filter: "blur(40px)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Secondary purple orb */}
+      <div
+        className="animate-float"
+        style={{
+          position: "absolute",
+          top: "30%",
+          right: "10%",
+          width: "300px",
+          height: "300px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)",
+          filter: "blur(30px)",
+          pointerEvents: "none",
+          animationDelay: "2s",
+        }}
+      />
+
+      {/* Tertiary cyan orb */}
+      <div
+        className="animate-float"
+        style={{
+          position: "absolute",
+          top: "20%",
+          left: "5%",
+          width: "250px",
+          height: "250px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%)",
+          filter: "blur(25px)",
+          pointerEvents: "none",
+          animationDelay: "4s",
+        }}
+      />
+
+      {/* ── Content ──────────────────────────────── */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          maxWidth: "900px",
+          textAlign: "center",
+          width: "100%",
+        }}
+      >
+        {/* Badge */}
+        <div className="animate-fade-in-up" style={{ marginBottom: "24px" }}>
+          <span className="section-badge animate-pulse-glow">
+            <span style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "#22c55e",
+              display: "inline-block",
+              boxShadow: "0 0 6px rgba(34,197,94,0.8)",
+            }} />
+            Open Source · Pre-Launch
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h1
+          className="animate-fade-in-up-1"
+          style={{
+            fontSize: "clamp(42px, 7vw, 88px)",
+            fontWeight: 800,
+            letterSpacing: "-0.04em",
+            lineHeight: 1.02,
+            marginBottom: "24px",
+          }}
+        >
+          Learn DevOps by
+          <br />
+          <span className="text-gradient">fixing real systems</span>
+          <span style={{ color: "#22c55e" }}>.</span>
+        </h1>
+
+        {/* Sub-headline */}
+        <p
+          className="animate-fade-in-up-2"
+          style={{
+            fontSize: "clamp(17px, 2vw, 21px)",
+            color: "#8888aa",
+            lineHeight: 1.65,
+            maxWidth: "600px",
+            margin: "0 auto 40px",
+            fontWeight: 400,
+          }}
+        >
+          An open-source platform where you learn by doing.{" "}
+          <span style={{ color: "#a0a0cc" }}>
+            Local labs. Real terminals. No cloud fees.
+          </span>
+        </p>
+
+        {/* CTAs */}
+        <div
+          className="animate-fade-in-up-3"
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+            marginBottom: "56px",
+          }}
+        >
+          <a
+            href="#cta"
+            className="glow-green"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              padding: "14px 28px",
+              fontSize: "15px",
+              fontWeight: 600,
+              color: "#030a04",
+              background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+              borderRadius: "10px",
+              textDecoration: "none",
+              border: "1px solid rgba(34,197,94,0.3)",
+              transition: "all 0.3s ease",
+              minWidth: "160px",
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px) scale(1.02)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 0 30px rgba(34,197,94,0.4), 0 8px 24px rgba(0,0,0,0.4)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.transform = "none";
+              (e.currentTarget as HTMLElement).style.boxShadow = "";
+            }}
+          >
+            Join Waitlist
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+
+          <a
+            href={`https://github.com/thelastdeploy/platform`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              padding: "14px 28px",
+              fontSize: "15px",
+              fontWeight: 500,
+              color: "#c8c8e0",
+              background: "rgba(255,255,255,0.04)",
+              borderRadius: "10px",
+              textDecoration: "none",
+              border: "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(8px)",
+              transition: "all 0.3s ease",
+              minWidth: "160px",
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.14)";
+              (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.08)";
+              (e.currentTarget as HTMLElement).style.transform = "none";
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            View on GitHub
+          </a>
+        </div>
+
+        {/* Countdown */}
+        <div
+          className="animate-fade-in-up-4"
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}
+        >
+          <p style={{
+            fontSize: "10px",
+            fontFamily: "JetBrains Mono, monospace",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "#4a4a6a",
+            fontWeight: 500,
+          }}>
+            Launching in
+          </p>
+          <CountdownTimer />
+        </div>
+      </div>
+
+      {/* ── Floating terminal preview ──────────── */}
+      <div
+        className="animate-fade-in-up-5"
+        style={{
+          position: "relative",
+          zIndex: 10,
+          marginTop: "64px",
+          width: "100%",
+          maxWidth: "720px",
+        }}
+      >
+        <div className="terminal-window">
+          <div className="terminal-header">
+            <div className="terminal-dot" style={{ background: "#ff5f57" }} />
+            <div className="terminal-dot" style={{ background: "#febc2e" }} />
+            <div className="terminal-dot" style={{ background: "#28c840" }} />
+            <span style={{
+              marginLeft: "10px",
+              fontSize: "12px",
+              color: "#4a4a6a",
+              fontFamily: "JetBrains Mono, monospace",
+            }}>
+              ~ / tld
+            </span>
+            <div style={{ marginLeft: "auto", display: "flex", gap: "12px" }}>
+              <span style={{ fontSize: "11px", color: "#4a4a6a", fontFamily: "monospace" }}>bash</span>
+            </div>
+          </div>
+          <div style={{
+            padding: "20px 24px",
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: "13px",
+            lineHeight: 1.8,
+          }}>
+            <div style={{ color: "#4a4a6a", marginBottom: "4px" }}># Start your first real DevOps lab</div>
+            <div style={{ marginBottom: "4px" }}>
+              <span style={{ color: "#22c55e" }}>❯</span>
+              {" "}<span style={{ color: "#f0f0ff" }}>tld start docker-fundamentals</span>
+            </div>
+            <div style={{ color: "#22c55e", marginBottom: "2px", paddingLeft: "12px" }}>
+              ✓ Environment ready — 3 containers spun up
+            </div>
+            <div style={{ color: "#4a4a6a", paddingLeft: "12px", marginBottom: "12px" }}>
+              → Break the system. Fix it. Validate.
+            </div>
+            <div style={{ marginBottom: "4px" }}>
+              <span style={{ color: "#22c55e" }}>❯</span>
+              {" "}<span style={{ color: "#f0f0ff" }}>tld check</span>
+            </div>
+            <div style={{ color: "#22c55e", paddingLeft: "12px", marginBottom: "4px" }}>
+              ✓ All 5 checks passed
+            </div>
+            <div style={{ paddingLeft: "12px", color: "#a855f7" }}>
+              🎉 +50 XP · Level up: <span style={{ color: "#e879f9" }}>Container Engineer II</span>
+            </div>
+            <div style={{ marginTop: "12px" }}>
+              <span style={{ color: "#22c55e" }}>❯</span>
+              {" "}
+              <span className="animate-blink" style={{ color: "#f0f0ff", borderRight: "2px solid #22c55e", paddingRight: "2px" }}>
+                {" "}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Glow under terminal */}
+        <div style={{
+          position: "absolute",
+          bottom: "-30px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "80%",
+          height: "60px",
+          background: "radial-gradient(ellipse, rgba(34,197,94,0.12) 0%, transparent 70%)",
+          filter: "blur(20px)",
+          pointerEvents: "none",
+        }} />
+      </div>
+
+      {/* Scroll indicator */}
+      <div style={{
+        position: "absolute",
+        bottom: "32px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "6px",
+        opacity: 0.4,
+      }}>
+        <span style={{ fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", color: "#8888aa" }}>scroll</span>
+        <div style={{
+          width: "20px",
+          height: "32px",
+          border: "1.5px solid rgba(136,136,170,0.4)",
+          borderRadius: "10px",
+          display: "flex",
+          justifyContent: "center",
+          paddingTop: "4px",
+        }}>
+          <div
+            className="animate-float"
+            style={{
+              width: "4px",
+              height: "8px",
+              borderRadius: "2px",
+              background: "#22c55e",
+              animationDuration: "1.5s",
+            }}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
