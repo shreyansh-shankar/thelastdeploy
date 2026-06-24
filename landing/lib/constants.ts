@@ -3,8 +3,10 @@ export const LAUNCH_DATE = new Date("2026-08-08T00:00:00Z");
 export const SITE_URL = "https://thelastdeploy.dev";
 
 export const SOCIAL_LINKS = {
-  github: "https://github.com/thelastdeploy/platform",
-  discord: "https://discord.gg/placeholder", // TODO: replace with real Discord invite
+  github: "https://github.com/thelastdeploy/thelastdeploy",
+  discord: "https://discord.gg/gyRPQkust",
+  linkedin: "https://www.linkedin.com/company/thelastdeploy/",
+  blog: "https://thelastdeploy.hashnode.dev/",
 } as const;
 
 export const TRACKS = [

@@ -194,7 +194,7 @@ export default function Hero() {
           </a>
 
           <a
-            href={`https://github.com/thelastdeploy/platform`}
+            href={SOCIAL_LINKS.github}
             target="_blank"
             rel="noopener noreferrer"
             style={{

@@ -5,6 +5,8 @@ import { SOCIAL_LINKS } from "@/lib/constants";
 const footerLinks = [
   { label: "GitHub", href: SOCIAL_LINKS.github },
   { label: "Discord", href: SOCIAL_LINKS.discord },
+  { label: "LinkedIn", href: SOCIAL_LINKS.linkedin },
+  { label: "Blog", href: SOCIAL_LINKS.blog },
 ];
 
 export default function Footer() {
