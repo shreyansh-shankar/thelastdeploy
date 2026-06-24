@@ -4,8 +4,7 @@ export const SITE_URL = "https://thelastdeploy.dev";
 
 export const SOCIAL_LINKS = {
   github: "https://github.com/thelastdeploy/platform",
-  youtube: "https://youtube.com/@thelastdeploy",
-  instagram: "https://instagram.com/thelastdeploy",
+  discord: "https://discord.gg/placeholder", // TODO: replace with real Discord invite
 } as const;
 
 export const TRACKS = [

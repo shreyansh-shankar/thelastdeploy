@@ -4,8 +4,7 @@ import { SOCIAL_LINKS } from "@/lib/constants";
 
 const footerLinks = [
   { label: "GitHub", href: SOCIAL_LINKS.github },
-  { label: "YouTube", href: SOCIAL_LINKS.youtube },
-  { label: "Instagram", href: SOCIAL_LINKS.instagram },
+  { label: "Discord", href: SOCIAL_LINKS.discord },
 ];
 
 export default function Footer() {

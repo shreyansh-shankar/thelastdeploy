@@ -219,6 +219,34 @@ export default function Tracks() {
             );
           })}
         </div>
+
+        {/* "And many more" hint */}
+        <div style={{
+          marginTop: "24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "12px",
+        }}>
+          <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06))" }} />
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "8px 20px",
+            borderRadius: "999px",
+            border: "1px dashed rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.02)",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a4a6a" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+            </svg>
+            <span style={{ fontSize: "13px", color: "#4a4a6a", fontWeight: 500 }}>
+              and many more tracks coming soon
+            </span>
+          </div>
+          <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg, rgba(255,255,255,0.06), transparent)" }} />
+        </div>
       </div>
     </section>
   );

@@ -1,21 +1,55 @@
 "use client";
 
+const VideoIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+);
+const CodeIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+);
+const TerminalIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+);
+const CloudIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+);
+const QuizIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+);
+const LockIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+);
+const LaptopIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+);
+const BugIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 2l1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3.003 3.003 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6z"/><path d="M12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-3 1.5-6 3-8M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M21 21c0-3-1.5-6-3-8"/></svg>
+);
+const FreeIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+);
+const CheckIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+);
+const OpenSourceIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 22a1 1 0 0 1-1-1v-4h-4v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V11l7-9 7 9v10a1 1 0 0 1-1 1z"/></svg>
+);
+
 const traditional = [
-  { text: "Watch pre-recorded videos passively", icon: "▶" },
-  { text: "Follow copy-paste tutorials", icon: "/>" },
-  { text: "Browser-based fake terminals", icon: "⌨" },
-  { text: "Expensive cloud environments", icon: "$" },
-  { text: "Multiple-choice quizzes", icon: "?" },
-  { text: "Closed-source, gatekept content", icon: "🔒" },
+  { text: "Watch pre-recorded videos passively", icon: <VideoIcon /> },
+  { text: "Follow copy-paste tutorials", icon: <CodeIcon /> },
+  { text: "Browser-based fake terminals", icon: <TerminalIcon /> },
+  { text: "Expensive cloud environments", icon: <CloudIcon /> },
+  { text: "Multiple-choice quizzes", icon: <QuizIcon /> },
+  { text: "Closed-source, gatekept content", icon: <LockIcon /> },
 ];
 
 const tld = [
-  { text: "Run labs on your actual machine", icon: "💻" },
-  { text: "Real troubleshooting scenarios", icon: "🔥" },
-  { text: "Native terminal — full control", icon: ">_" },
-  { text: "No cloud costs — completely free", icon: "∞" },
-  { text: "Practical validation with tld check", icon: "✓" },
-  { text: "Fully open source & community-driven", icon: "⬡" },
+  { text: "Run labs on your actual machine", icon: <LaptopIcon /> },
+  { text: "Real troubleshooting scenarios", icon: <BugIcon /> },
+  { text: "Native terminal — full control", icon: <TerminalIcon /> },
+  { text: "No cloud costs — completely free", icon: <FreeIcon /> },
+  { text: "Practical validation with tld check", icon: <CheckIcon /> },
+  { text: "Fully open source & community-driven", icon: <OpenSourceIcon /> },
 ];
 
 export default function Comparison() {
@@ -118,11 +152,12 @@ export default function Comparison() {
                   }}
                 >
                   <span style={{
-                    fontSize: "11px",
-                    color: "#ef444460",
-                    fontFamily: "JetBrains Mono, monospace",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "rgba(239,68,68,0.5)",
                     minWidth: "20px",
-                    textAlign: "center",
+                    flexShrink: 0,
                   }}>
                     {item.icon}
                   </span>
@@ -186,11 +221,12 @@ export default function Comparison() {
                   }}
                 >
                   <span style={{
-                    fontSize: "11px",
-                    color: "#22c55e80",
-                    fontFamily: "JetBrains Mono, monospace",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "rgba(34,197,94,0.6)",
                     minWidth: "20px",
-                    textAlign: "center",
+                    flexShrink: 0,
                   }}>
                     {item.icon}
                   </span>
