@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "The Last Deploy — Learn DevOps by fixing real systems",
   description:
     "An open-source DevOps learning platform. Complete hands-on labs on your own machine — no cloud fees, no fake terminals, no passive videos.",
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     title: "The Last Deploy",
     description: "Learn DevOps by fixing real systems.",
@@ -25,10 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${inter.variable} antialiased bg-background text-foreground`}
-        style={{ fontFamily: "var(--font-inter), Inter, system-ui, sans-serif" }}
-      >
+      <body className={`${inter.className} antialiased bg-background text-foreground`}>
         {children}
       </body>
     </html>

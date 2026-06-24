@@ -130,10 +130,9 @@ export default function Problem() {
               </h3>
               <p style={{
                 fontSize: "13px",
-                color: "#6666888",
+                color: "#7a7a9a",
                 lineHeight: 1.65,
-                color: "#7070909",
-              } as React.CSSProperties}>
+              }}>
                 {pain.description}
               </p>
             </div>
