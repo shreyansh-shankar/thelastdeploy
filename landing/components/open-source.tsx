@@ -48,12 +48,9 @@ export default function OpenSource() {
       }} />
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "64px",
-          alignItems: "center",
-        }}>
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center"
+        >
           {/* Left: text */}
           <div>
             <div style={{ marginBottom: "20px" }}>

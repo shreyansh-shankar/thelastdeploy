@@ -114,8 +114,8 @@ export default function Navbar() {
               href={SOCIAL_LINKS.discord}
               target="_blank"
               rel="noopener noreferrer"
+              className="hidden sm:inline-flex"
               style={{
-                display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "6px",

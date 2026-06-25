@@ -102,11 +102,12 @@ export default function Comparison() {
         </div>
 
         {/* Comparison grid */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "16px",
-        }}>
+        <div
+          className="grid grid-cols-1 md:grid-cols-2"
+          style={{
+            gap: "16px",
+          }}
+        >
           {/* Traditional — left */}
           <div style={{
             borderRadius: "16px",
