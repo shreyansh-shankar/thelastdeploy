@@ -1,0 +1,11 @@
+id: dkr-fix-startup-failure
+title: "Fix container startup failure"
+xp: 40
+estimated_minutes: 10
+order: 1
+setup:
+  type: shell
+  seed_commands:
+    - "docker rm -f host-port-occupier nginx-service || true"
+    - "docker run -d --name host-port-occupier -p 8084:80 nginx:alpine"
+version: 1

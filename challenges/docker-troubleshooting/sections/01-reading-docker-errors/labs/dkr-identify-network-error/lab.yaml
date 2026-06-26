@@ -1,0 +1,13 @@
+id: dkr-identify-network-error
+title: "Identify container network error"
+xp: 25
+estimated_minutes: 5
+order: 2
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/docker-troubleshooting/errors"
+    - "docker rm -f api-client || true"
+    - "docker run -d --name api-client alpine sh -c \"echo 'Connecting to api-server on port 9999...' && echo 'Error: dial tcp 127.0.0.1:9999: connect: connection refused' >&2 && exit 1\" || true"
+    - "rm -f $HOME/docker-troubleshooting/errors/network-port.txt"
+version: 1

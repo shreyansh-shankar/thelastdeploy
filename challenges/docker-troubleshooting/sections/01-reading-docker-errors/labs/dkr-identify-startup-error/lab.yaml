@@ -1,0 +1,13 @@
+id: dkr-identify-startup-error
+title: "Identify container startup error"
+xp: 25
+estimated_minutes: 5
+order: 1
+setup:
+  type: shell
+  seed_commands:
+    - "mkdir -p $HOME/docker-troubleshooting/errors"
+    - "docker rm -f crashing-app || true"
+    - "docker run -d --name crashing-app alpine sh -c \"echo 'ERROR: Initialization failed. Code: ERR_TOKEN_XY123' >&2 && exit 1\" || true"
+    - "rm -f $HOME/docker-troubleshooting/errors/startup-token.txt"
+version: 1
