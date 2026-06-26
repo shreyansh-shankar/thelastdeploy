@@ -43,7 +43,6 @@ Everything runs locally. No account required to start. No cloud costs. Forever f
 │   ├── docker-images/
 │   ├── docker-networking/
 │   ├── git-fundamentals/
-│   ├── k8s-basics/
 │   └── ...
 ├── web/
 │   ├── backend/    # REST API — Python / FastAPI
@@ -148,8 +147,6 @@ npm run dev   # runs on http://localhost:3002
 | Docker Images | ✅ Available |
 | Docker Networking | ✅ Available |
 | Docker Storage | ✅ Available |
-| Docker Advanced | ✅ Available |
-| Kubernetes Basics | ✅ Available |
 | Terraform | 🔜 Coming Soon |
 | Nginx | 🔜 Coming Soon |
 
