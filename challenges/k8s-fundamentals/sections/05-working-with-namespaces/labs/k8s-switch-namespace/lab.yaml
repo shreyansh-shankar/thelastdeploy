@@ -1,0 +1,11 @@
+id: k8s-switch-namespace
+title: "Switch Default Namespace"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "kubectl create namespace development --context=kind-tld-k8s-switch-namespace"
+version: 1

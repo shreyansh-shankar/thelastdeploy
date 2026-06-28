@@ -1,0 +1,16 @@
+id: k8s-explore-cluster
+title: "Explore Cluster Services"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-fundamentals"
+    - "rm -f $HOME/k8s-fundamentals/app-service-ip.txt"
+    - "kubectl create namespace app-space --context=kind-tld-k8s-explore-cluster"
+    - 'until kubectl get serviceaccount default -n app-space --context=kind-tld-k8s-explore-cluster &>/dev/null; do sleep 1; done'
+    - "kubectl run app-pod --image=nginx -n app-space --context=kind-tld-k8s-explore-cluster"
+    - "kubectl expose pod app-pod --port=80 --name=app-service -n app-space --context=kind-tld-k8s-explore-cluster"
+version: 2

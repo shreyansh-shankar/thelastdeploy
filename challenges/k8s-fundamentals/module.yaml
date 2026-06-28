@@ -1,0 +1,12 @@
+id: k8s-fundamentals
+title: "Kubernetes Fundamentals"
+description: "Learn the core concepts of Kubernetes, deploy local clusters using Kind, manage namespaces, inspect resources, and troubleshoot application crashes."
+topic: kubernetes
+difficulty: beginner
+estimated_minutes: 60
+tags:
+  - kubernetes
+  - k8s
+  - containers
+  - devops
+version: 1

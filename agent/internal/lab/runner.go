@@ -50,6 +50,9 @@ func Start(lab *cache.Lab) error {
 		if err := StartKind(lab); err != nil {
 			return err
 		}
+		if err := runShellSetup(lab); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unknown setup type: %q (must be shell, docker, or kind)", lab.SetupType)
 	}

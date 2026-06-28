@@ -1,0 +1,14 @@
+id: k8s-cluster-investigation
+title: "Investigate Cluster Failures"
+xp: 40
+estimated_minutes: 10
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-fundamentals"
+    - "rm -f $HOME/k8s-fundamentals/crash-code.txt"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-cluster-investigation &>/dev/null; do sleep 1; done'
+    - 'kubectl run failing-app --image=alpine --context=kind-tld-k8s-cluster-investigation -- sh -c "echo ERROR_CODE_7712 >&2 && exit 1"'
+version: 2

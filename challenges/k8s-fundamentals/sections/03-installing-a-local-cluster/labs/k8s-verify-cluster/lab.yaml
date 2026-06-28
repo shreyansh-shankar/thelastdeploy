@@ -1,0 +1,12 @@
+id: k8s-verify-cluster
+title: "Verify Cluster Access"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-fundamentals"
+    - "rm -f $HOME/k8s-fundamentals/node-name.txt"
+version: 1

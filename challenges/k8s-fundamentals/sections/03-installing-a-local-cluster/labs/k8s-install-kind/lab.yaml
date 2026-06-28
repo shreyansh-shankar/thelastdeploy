@@ -1,0 +1,7 @@
+id: k8s-install-kind
+title: "Install Kind and Kubectl"
+xp: 20
+estimated_minutes: 5
+setup:
+  type: shell
+version: 1

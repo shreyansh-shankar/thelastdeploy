@@ -1,0 +1,14 @@
+id: k8s-describe-resource
+title: "Describe a Resource"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-fundamentals"
+    - "rm -f $HOME/k8s-fundamentals/web-tier-label.txt"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-describe-resource &>/dev/null; do sleep 1; done'
+    - "kubectl run web-server --image=nginx --labels=\"app=frontend,tier=web\" --context=kind-tld-k8s-describe-resource"
+version: 2
