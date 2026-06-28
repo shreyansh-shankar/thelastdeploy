@@ -1,0 +1,17 @@
+id: k8s-self-healing-demo
+title: "Self-Healing Deployment"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-workloads"
+    - "rm -f $HOME/k8s-workloads/new-pod.txt"
+    - "rm -f $HOME/k8s-workloads/initial-pod.txt"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-self-healing-demo &>/dev/null; do sleep 1; done'
+    - 'kubectl create deployment app-deploy --image=nginx --replicas=1 --context=kind-tld-k8s-self-healing-demo'
+    - 'until [ "$(kubectl get pods -l app=app-deploy --context=kind-tld-k8s-self-healing-demo -o jsonpath="{.items[0].metadata.name}" 2>/dev/null)" != "" ]; do sleep 1; done'
+    - 'kubectl get pods -l app=app-deploy --context=kind-tld-k8s-self-healing-demo -o jsonpath="{.items[0].metadata.name}" > $HOME/k8s-workloads/initial-pod.txt'
+version: 1

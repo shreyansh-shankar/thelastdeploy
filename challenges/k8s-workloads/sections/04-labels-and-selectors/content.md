@@ -1,0 +1,45 @@
+# Labels and Selectors
+
+**Labels** are key/value pairs that are attached to Kubernetes resources (such as Pods). They are intended to be used to specify identifying attributes of objects that are meaningful and relevant to users, but do not directly imply semantics to the core system.
+
+**Selectors** are the grouping primitive in Kubernetes. They allow you to query and filter collections of resources based on their labels.
+
+---
+
+## 1. Adding and Modifying Labels
+
+You can specify labels in the metadata block of any resource YAML configuration:
+```yaml
+metadata:
+  labels:
+    app: backend
+    environment: production
+```
+
+Or attach them dynamically to active resources using the CLI:
+```bash
+# Add environment=production label to metadata-pod
+kubectl label pod metadata-pod environment=production
+
+# Overwrite existing label value
+kubectl label pod metadata-pod environment=development --overwrite
+```
+
+---
+
+## 2. Label Selectors
+
+There are two types of selectors: equality-based (e.g. `environment=production`) and set-based (e.g. `environment in (production, staging)`).
+
+### Querying Resources by Label Selector
+To query resources using labels, use the `-l` or `--selector` flag:
+```bash
+# List all pods with label environment=production
+kubectl get pods -l environment=production
+
+# List all pods with both environment=production AND app=nginx
+kubectl get pods -l environment=production,app=nginx
+
+# List all pods where tier label is NOT backend
+kubectl get pods -l 'tier!=backend'
+```

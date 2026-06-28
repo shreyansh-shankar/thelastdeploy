@@ -1,0 +1,16 @@
+id: k8s-query-by-label
+title: "Query by Label Selector"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-workloads"
+    - "rm -f $HOME/k8s-workloads/backend-pods.txt"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-query-by-label &>/dev/null; do sleep 1; done'
+    - 'kubectl run pod1 --image=nginx --labels="tier=backend,app=api" --context=kind-tld-k8s-query-by-label'
+    - 'kubectl run pod2 --image=nginx --labels="tier=backend,app=worker" --context=kind-tld-k8s-query-by-label'
+    - 'kubectl run pod3 --image=nginx --labels="tier=frontend,app=web" --context=kind-tld-k8s-query-by-label'
+version: 1

@@ -1,0 +1,15 @@
+id: k8s-rollback-deployment
+title: "Rollback a Deployment"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-rollback-deployment &>/dev/null; do sleep 1; done'
+    - 'kubectl create deployment rollout-deploy --image=nginx:1.14.2 --context=kind-tld-k8s-rollback-deployment'
+    - 'until [ "$(kubectl --context=kind-tld-k8s-rollback-deployment get deployment rollout-deploy -o jsonpath="{.status.readyReplicas}" 2>/dev/null)" = "1" ]; do sleep 1; done'
+    - 'kubectl set image deployment/rollout-deploy nginx=nginx:1.16.1 --context=kind-tld-k8s-rollback-deployment'
+    - 'until [ "$(kubectl --context=kind-tld-k8s-rollback-deployment get deployment rollout-deploy -o jsonpath="{.status.readyReplicas}" 2>/dev/null)" = "1" ]; do sleep 1; done'
+version: 1

@@ -1,0 +1,14 @@
+id: k8s-check-rollout
+title: "Check Rollout Status"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-workloads"
+    - "rm -f $HOME/k8s-workloads/rollout-status.txt"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-check-rollout &>/dev/null; do sleep 1; done'
+    - 'kubectl create deployment rollout-deploy --image=nginx --context=kind-tld-k8s-check-rollout'
+version: 1

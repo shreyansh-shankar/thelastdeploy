@@ -1,0 +1,12 @@
+id: k8s-scale-deployment
+title: "Scale a Deployment"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-scale-deployment &>/dev/null; do sleep 1; done'
+    - 'kubectl create deployment web-deploy --image=nginx --replicas=2 --context=kind-tld-k8s-scale-deployment'
+version: 1
