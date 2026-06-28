@@ -1,0 +1,12 @@
+id: k8s-use-configmap
+title: "Use ConfigMap as Env Var"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-use-configmap &>/dev/null; do sleep 1; done'
+    - 'kubectl create configmap app-config --from-literal=app.environment=production --context=kind-tld-k8s-use-configmap'
+version: 1

@@ -1,0 +1,5 @@
+id: k8s-secrets
+title: "Secrets"
+order: 2
+xp: 15
+version: 1

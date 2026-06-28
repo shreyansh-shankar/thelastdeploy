@@ -1,0 +1,12 @@
+id: k8s-use-secret
+title: "Mount Secret as Volume"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-use-secret &>/dev/null; do sleep 1; done'
+    - 'kubectl create secret generic db-secret --from-literal=password=supersecret --context=kind-tld-k8s-use-secret'
+version: 1

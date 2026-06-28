@@ -154,6 +154,7 @@ npm run dev   # runs on http://localhost:3002
 | Kubernetes Fundamentals | ✅ Available |
 | Kubernetes Pods | ✅ Available |
 | Kubernetes Workloads | ✅ Available |
+| Kubernetes Config & Storage | ✅ Available |
 | Terraform | 🔜 Coming Soon |
 | Nginx | 🔜 Coming Soon |
 

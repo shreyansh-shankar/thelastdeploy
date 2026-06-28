@@ -1,0 +1,14 @@
+id: k8s-fix-storage-configuration
+title: "Fix Pod Storage Mount"
+xp: 45
+estimated_minutes: 10
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-storage"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-fix-storage-configuration &>/dev/null; do sleep 1; done'
+    - 'echo -e "apiVersion: v1\nkind: Pod\nmetadata:\n  name: db-pod\nspec:\n  containers:\n  - name: database\n    image: mysql:5.7\n    env:\n    - name: MYSQL_ALLOW_EMPTY_PASSWORD\n      value: \"yes\"\n    volumeMounts:\n    - name: db-vol\n      mountPath: /var/lib/mysql\n  volumes:\n  - name: db-vol\n    persistentVolumeClaim:\n      claimName: non-existent-claim" > $HOME/k8s-storage/pod-broken.yaml'
+    - 'kubectl apply -f $HOME/k8s-storage/pod-broken.yaml --context=kind-tld-k8s-fix-storage-configuration'
+version: 1
