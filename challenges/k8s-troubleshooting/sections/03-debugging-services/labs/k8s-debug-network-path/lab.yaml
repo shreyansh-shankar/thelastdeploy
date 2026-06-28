@@ -1,0 +1,16 @@
+id: k8s-debug-network-path
+title: "Debug Service Endpoints"
+xp: 35
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-troubleshooting"
+    - "rm -f $HOME/k8s-troubleshooting/endpoints.txt"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-debug-network-path &>/dev/null; do sleep 1; done'
+    - 'kubectl run web-pod --image=nginx --labels="app=web" --context=kind-tld-k8s-debug-network-path'
+    - 'echo -e "apiVersion: v1\nkind: Service\nmetadata:\n  name: web-service\nspec:\n  selector:\n    app: web\n  ports:\n  - port: 80\n    targetPort: 80" > $HOME/k8s-troubleshooting/svc-good.yaml'
+    - 'kubectl apply -f $HOME/k8s-troubleshooting/svc-good.yaml --context=kind-tld-k8s-debug-network-path'
+version: 1

@@ -1,0 +1,14 @@
+id: k8s-recover-production-application
+title: "Recover Production Application"
+xp: 50
+estimated_minutes: 10
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-troubleshooting"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-recover-production-application &>/dev/null; do sleep 1; done'
+    - 'echo -e "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: frontend-deploy\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: frontend\n  template:\n    metadata:\n      labels:\n        app: frontend\n    spec:\n      containers:\n      - name: frontend\n        image: nginx:1.9999.broken\n        envFrom:\n        - configMapRef:\n            name: frontend-config" > $HOME/k8s-troubleshooting/deploy-broken.yaml'
+    - 'kubectl apply -f $HOME/k8s-troubleshooting/deploy-broken.yaml --context=kind-tld-k8s-recover-production-application'
+version: 1
