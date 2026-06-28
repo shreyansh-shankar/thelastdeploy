@@ -1,0 +1,12 @@
+id: k8s-delete-pod
+title: "Delete a Pod"
+xp: 25
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-delete-pod &>/dev/null; do sleep 1; done'
+    - 'kubectl run dynamic-pod --image=nginx --context=kind-tld-k8s-delete-pod'
+version: 1

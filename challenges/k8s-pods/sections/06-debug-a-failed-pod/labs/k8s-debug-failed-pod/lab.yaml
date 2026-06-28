@@ -1,0 +1,12 @@
+id: k8s-debug-failed-pod
+title: "Debug Pod Image Typo"
+xp: 40
+estimated_minutes: 10
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-debug-failed-pod &>/dev/null; do sleep 1; done'
+    - 'kubectl run failing-image-pod --image=nginxxxx --context=kind-tld-k8s-debug-failed-pod'
+version: 1

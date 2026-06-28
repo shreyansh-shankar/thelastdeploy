@@ -152,6 +152,7 @@ npm run dev   # runs on http://localhost:3002
 | Docker Compose | ✅ Available |
 | Docker Troubleshooting | ✅ Available |
 | Kubernetes Fundamentals | ✅ Available |
+| Kubernetes Pods | ✅ Available |
 | Terraform | 🔜 Coming Soon |
 | Nginx | 🔜 Coming Soon |
 

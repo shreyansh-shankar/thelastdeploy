@@ -1,0 +1,14 @@
+id: k8s-inspect-pod
+title: "Inspect a Pod IP"
+xp: 30
+estimated_minutes: 5
+setup:
+  type: kind
+  resource_limits_cpu: 1
+  resource_limits_mem: 1024
+  seed_commands:
+    - "mkdir -p $HOME/k8s-pods"
+    - "rm -f $HOME/k8s-pods/pod-ip.txt"
+    - 'until kubectl get serviceaccount default --context=kind-tld-k8s-inspect-pod &>/dev/null; do sleep 1; done'
+    - 'kubectl run test-pod --image=nginx --context=kind-tld-k8s-inspect-pod'
+version: 1

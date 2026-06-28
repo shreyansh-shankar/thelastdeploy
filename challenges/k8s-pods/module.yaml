@@ -1,0 +1,12 @@
+id: k8s-pods
+title: "Kubernetes Pods"
+description: "Deep dive into the fundamental execution unit of Kubernetes. Learn how to deploy, delete, inspect, log, execute commands in containers, design sidecars, monitor lifecycle states, and debug crashed pods."
+topic: kubernetes
+difficulty: beginner
+estimated_minutes: 60
+tags:
+  - kubernetes
+  - k8s
+  - pods
+  - containers
+version: 1

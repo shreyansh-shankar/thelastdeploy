@@ -1,0 +1,5 @@
+id: k8s-debug-a-failed-pod
+title: "Debug a Failed Pod"
+order: 6
+xp: 20
+version: 1
