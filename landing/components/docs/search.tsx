@@ -12,15 +12,18 @@ const fuse = new Fuse(ALL_NAV_ITEMS, {
 });
 
 interface SearchProps {
+  isSubdomain: boolean;
   onClose: () => void;
 }
 
-export default function DocsSearch({ onClose }: SearchProps) {
+export default function DocsSearch({ isSubdomain, onClose }: SearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<typeof ALL_NAV_ITEMS>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const getHref = (href: string) => (isSubdomain ? href : `/docs${href}`);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -45,7 +48,7 @@ export default function DocsSearch({ onClose }: SearchProps) {
       setSelectedIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       if (results[selectedIndex]) {
-        router.push(results[selectedIndex].href);
+        router.push(getHref(results[selectedIndex].href));
         onClose();
       }
     } else if (e.key === "Escape") {
@@ -89,7 +92,7 @@ export default function DocsSearch({ onClose }: SearchProps) {
             results.map((item, i) => (
               <a
                 key={item.href}
-                href={item.href}
+                href={getHref(item.href)}
                 className={`docs-search-result${i === selectedIndex ? " selected" : ""}`}
                 onClick={onClose}
               >

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { getPage } from "@/lib/docs-content";
 import { getPrevNext } from "@/lib/docs-nav";
 import PageRenderer from "@/components/docs/page-renderer";
@@ -31,6 +32,10 @@ export default async function DocsPage({ params }: PageProps) {
 
   const { prev, next } = getPrevNext(slug);
 
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const isSubdomain = host.startsWith("docs.") || host.includes("docs.localhost");
+
   return (
     <>
       {/* Main content */}
@@ -50,7 +55,7 @@ export default async function DocsPage({ params }: PageProps) {
         <PageRenderer blocks={page.content} />
 
         {/* Prev/Next */}
-        <PrevNextNav prev={prev} next={next} />
+        <PrevNextNav isSubdomain={isSubdomain} prev={prev} next={next} />
       </main>
 
       {/* On-page TOC */}

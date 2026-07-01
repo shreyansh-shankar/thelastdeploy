@@ -5,7 +5,15 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { NAV_SECTIONS } from "@/lib/docs-nav";
 
-export default function DocsSidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
+export default function DocsSidebar({
+  isSubdomain,
+  mobileOpen,
+  onClose,
+}: {
+  isSubdomain: boolean;
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -13,9 +21,13 @@ export default function DocsSidebar({ mobileOpen, onClose }: { mobileOpen?: bool
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const isActive = (href: string) => pathname === href;
+  const getHref = (href: string) => (isSubdomain ? href : `/docs${href}`);
+  const isActive = (href: string) => pathname === getHref(href);
   const isSectionActive = (items: { href: string }[]) =>
-    items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
+    items.some((item) => {
+      const activeHref = getHref(item.href);
+      return pathname === activeHref || pathname.startsWith(activeHref + "/");
+    });
 
   return (
     <aside className={`docs-sidebar${mobileOpen ? " mobile-open" : ""}`}>
@@ -94,7 +106,7 @@ export default function DocsSidebar({ mobileOpen, onClose }: { mobileOpen?: bool
               {section.items.map((item) => (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={getHref(item.href)}
                   className={`docs-nav-link${isActive(item.href) ? " active" : ""}`}
                   onClick={onClose}
                 >

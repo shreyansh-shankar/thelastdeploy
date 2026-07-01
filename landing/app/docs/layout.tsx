@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import DocsLayout from "@/components/docs/docs-layout";
 
 export const metadata: Metadata = {
@@ -15,10 +16,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function DocsRootLayout({
+export default async function DocsRootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DocsLayout>{children}</DocsLayout>;
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const isSubdomain = host.startsWith("docs.") || host.includes("docs.localhost");
+
+  return <DocsLayout isSubdomain={isSubdomain}>{children}</DocsLayout>;
 }

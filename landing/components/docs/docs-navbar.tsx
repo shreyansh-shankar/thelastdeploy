@@ -7,8 +7,26 @@ import { SOCIAL_LINKS } from "@/lib/constants";
 
 const DocsSearch = dynamic(() => import("./search"), { ssr: false });
 
-export default function DocsNavbar({ onMenuOpen }: { onMenuOpen?: () => void }) {
+export default function DocsNavbar({
+  isSubdomain,
+  onMenuOpen,
+}: {
+  isSubdomain: boolean;
+  onMenuOpen?: () => void;
+}) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mainSiteUrl, setMainSiteUrl] = useState("/");
+
+  useEffect(() => {
+    const host = window.location.host;
+    if (host.startsWith("docs.localhost")) {
+      setMainSiteUrl("http://localhost:3002/");
+    } else if (host.startsWith("docs.")) {
+      setMainSiteUrl("https://thelastdeploy.com/");
+    } else {
+      setMainSiteUrl("/");
+    }
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -49,8 +67,8 @@ export default function DocsNavbar({ onMenuOpen }: { onMenuOpen?: () => void }) 
               </svg>
             </button>
 
-            <Link
-              href="/"
+            <a
+              href={mainSiteUrl}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -67,13 +85,13 @@ export default function DocsNavbar({ onMenuOpen }: { onMenuOpen?: () => void }) 
                   Docs
                 </span>
               </div>
-            </Link>
+            </a>
 
             {/* Divider */}
             <div style={{ width: "1px", height: "20px", background: "rgba(255,255,255,0.06)" }} />
 
-            <Link
-              href="/"
+            <a
+              href={mainSiteUrl}
               style={{
                 fontSize: "12px",
                 color: "#4a4a6a",
@@ -90,7 +108,7 @@ export default function DocsNavbar({ onMenuOpen }: { onMenuOpen?: () => void }) 
                 <polyline points="15 18 9 12 15 6" />
               </svg>
               Back to site
-            </Link>
+            </a>
           </div>
 
           {/* Center — search */}
@@ -190,7 +208,7 @@ export default function DocsNavbar({ onMenuOpen }: { onMenuOpen?: () => void }) 
         </div>
       </header>
 
-      {searchOpen && <DocsSearch onClose={() => setSearchOpen(false)} />}
+      {searchOpen && <DocsSearch isSubdomain={isSubdomain} onClose={() => setSearchOpen(false)} />}
 
       <style>{`
         @media (max-width: 768px) {
